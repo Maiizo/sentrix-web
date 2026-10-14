@@ -1,0 +1,59 @@
+name: Frontend CI
+
+# When should this run?
+# - on every push to main
+# - on every pull request (opened, or updated with new commits)
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# If you push twice quickly, cancel the older run for the same branch/PR.
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: this workflow only needs to read the code.
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Every "run:" step below executes inside the frontend/ folder.
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # "npm ci" installs exactly what package-lock.json says (and fails if the
+      # lockfile and package.json disagree), so CI matches your machine.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # No real secrets here on purpose. Without NEXT_PUBLIC_SUPABASE_* the app
+      # sets its Supabase client to null, so the build never touches a real
+      # database. These placeholders only make that explicit.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+          NEXT_PUBLIC_GO_API_URL: http://localhost:8080
+          NEXT_TELEMETRY_DISABLED: "1"
