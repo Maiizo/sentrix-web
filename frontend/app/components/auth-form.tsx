@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Brand, BrandMark } from "./brand";
+import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -75,11 +76,46 @@ function AuthArtwork() {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isSignup = mode === "signup";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    sessionStorage.setItem("sentrix-demo-session", "active");
+    setFormError("");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    if (!isSupabaseConfigured || !supabase) {
+      sessionStorage.setItem("sentrix-demo-session", "active");
+      router.push(isSignup ? "/onboarding" : "/dashboard");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = isSignup
+      ? await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: String(formData.get("name") ?? "") },
+          },
+        })
+      : await supabase.auth.signInWithPassword({ email, password });
+
+    setIsSubmitting(false);
+    if (result.error) {
+      setFormError(result.error.message);
+      return;
+    }
+
+    if (isSignup && !result.data.session) {
+      setFormError("Account created. Check your email to confirm it, then log in.");
+      return;
+    }
+
     router.push(isSignup ? "/onboarding" : "/dashboard");
   }
 
@@ -179,12 +215,22 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
             <button
               type="submit"
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-xs font-semibold text-[#17140d] transition hover:bg-amber-400"
+              disabled={isSubmitting}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-xs font-semibold text-[#17140d] transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60"
             >
-              {isSignup ? "Create account" : "Log in"}
-              <span aria-hidden="true">→</span>
+              {isSubmitting ? "Connecting…" : isSignup ? "Create account" : "Log in"}
+              {!isSubmitting && <span aria-hidden="true">→</span>}
             </button>
           </form>
+
+          {formError && (
+            <p
+              role="status"
+              className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-center text-[10px] leading-4 text-amber-300"
+            >
+              {formError}
+            </p>
+          )}
 
           <p className="mt-6 text-center text-xs text-stone-500">
             {isSignup ? "Already have an account?" : "New to Sentrix?"}{" "}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 type IconName =
   | "overview"
@@ -423,13 +424,6 @@ function AlertRow({
   onReview: (id: number, feedback: "valid" | "false") => void;
 }) {
   const resolved = alert.reviewed;
-  const color =
-    alert.kind === "critical"
-      ? "text-red-500"
-      : alert.kind === "warning"
-        ? "text-amber-600 dark:text-amber-400"
-        : "text-emerald-600 dark:text-emerald-400";
-
   return (
     <article
       className={`surface-card flex flex-col gap-4 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:px-5 ${
@@ -713,22 +707,29 @@ function SettingsPanel({
       const settings: unknown = JSON.parse(value);
       if (!settings || typeof settings !== "object") return;
       const preferences = settings as Record<string, unknown>;
-      if (typeof preferences.emailAlerts === "boolean") {
-        setEmailAlerts(preferences.emailAlerts);
-      }
-      if (typeof preferences.weeklySummary === "boolean") {
-        setWeeklySummary(preferences.weeklySummary);
-      }
+      window.setTimeout(() => {
+        if (typeof preferences.emailAlerts === "boolean") {
+          setEmailAlerts(preferences.emailAlerts);
+        }
+        if (typeof preferences.weeklySummary === "boolean") {
+          setWeeklySummary(preferences.weeklySummary);
+        }
+      }, 0);
       if (
         typeof preferences.emissionsFactor === "string" &&
         Number.isFinite(Number(preferences.emissionsFactor)) &&
         Number(preferences.emissionsFactor) >= 0
       ) {
-        setEmissionsFactor(preferences.emissionsFactor);
-        onFactorChange(Number(preferences.emissionsFactor));
+        window.setTimeout(() => {
+          setEmissionsFactor(preferences.emissionsFactor as string);
+          onFactorChange(Number(preferences.emissionsFactor));
+        }, 0);
       }
     } catch {
-      setSaveError("Could not load saved preferences from this browser.");
+      window.setTimeout(
+        () => setSaveError("Could not load saved preferences from this browser."),
+        0,
+      );
     }
   }, [onFactorChange]);
 
@@ -914,11 +915,11 @@ function PreferenceToggle({
   );
 }
 
-export default function Home() {
+export default function Home({ initialNav = "Overview" }: { initialNav?: string }) {
   const router = useRouter();
   const [isDark, setIsDark] = useState(true);
   const [emissionsFactor, setEmissionsFactor] = useState(0.82);
-  const [activeNav, setActiveNav] = useState("Overview");
+  const [activeNav, setActiveNav] = useState(initialNav);
   const [devices, setDevices] = useState(initialDevices);
   const [alerts, setAlerts] = useState(initialAlerts);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -931,7 +932,18 @@ export default function Home() {
   const estimatedEnergy = devices.reduce((total, device) => total + device.load, 0);
   const estimatedEmissions = estimatedEnergy * emissionsFactor;
 
-  function logout() {
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace("/login");
+    });
+  }, [router]);
+
+  async function logout() {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
     sessionStorage.removeItem("sentrix-demo-session");
     router.replace("/login");
   }
