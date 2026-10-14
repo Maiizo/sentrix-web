@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dashboard-shell[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #121311;
+  --sidebar: #151613;
+  --header: rgb(21 22 19 / 92%);
+  --surface: #1a1b18;
+  --surface-hover: #22231f;
+  --border: #2b2c27;
+  --text-primary: #f0efe9;
+  --text-secondary: #b1b1a9;
+  --text-muted: #777970;
+  --chart-grid: #30312b;
+  --chart-label: #a1a198;
+  --chart-band: #615f50;
+  --chart-line: #e9e7df;
+  --chart-alert: #ef4444;
+}
+
+.dashboard-shell[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f6f5f1;
+  --sidebar: #fff;
+  --header: rgb(255 255 255 / 92%);
+  --surface: #fff;
+  --surface-hover: #f5f4ef;
+  --border: #e8e6df;
+  --text-primary: #20211e;
+  --text-secondary: #62645d;
+  --text-muted: #92938c;
+  --chart-grid: #e7e3d9;
+  --chart-label: #77776e;
+  --chart-band: #e6e3da;
+  --chart-line: #242521;
+  --chart-alert: #e3313e;
+}
+
+.surface-card {
+  background-color: var(--surface);
+}
+
+.eyebrow {
+  color: var(--text-muted);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
