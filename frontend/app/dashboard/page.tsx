@@ -3,6 +3,11 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
+import {
+  BleOnboardingModal,
+  type AcGroup,
+  type OnboardedAc,
+} from "../components/ble-onboarding-modal";
 
 type IconName =
   | "overview"
@@ -20,12 +25,16 @@ type IconName =
 type Device = {
   name: string;
   location: string;
-  status: "healthy" | "alert";
+  status: "healthy" | "alert" | "calibrating";
   health: number;
   load: number;
   anomaly?: boolean;
   live?: boolean;
   sparkline: string;
+  macAddress?: string;
+  meshId?: string;
+  targetTemp?: number;
+  calibrationDay?: number;
 };
 
 type AlertLog = {
@@ -260,7 +269,7 @@ function DeviceCard({
   device: Device;
   onClick: () => void;
 }) {
-  const healthy = device.status === "healthy";
+  const healthy = device.status !== "alert";
 
   return (
     <button
@@ -925,8 +934,13 @@ export default function Home({ initialNav = "Overview" }: { initialNav?: string 
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAddDevice, setShowAddDevice] = useState(false);
-  const [deviceName, setDeviceName] = useState("");
-  const [deviceLocation, setDeviceLocation] = useState("");
+
+  const acGroups: AcGroup[] = Array.from(new Set(devices.map((device) => device.location))).map(
+    (name) => ({
+      name,
+      meshId: devices.find((device) => device.location === name && device.meshId)?.meshId,
+    }),
+  );
 
   const alertCount = devices.filter((device) => device.status === "alert").length;
   const estimatedEnergy = devices.reduce((total, device) => total + device.load, 0);
@@ -972,26 +986,22 @@ export default function Home({ initialNav = "Overview" }: { initialNav?: string 
     );
   }
 
-  function addDevice(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = deviceName.trim();
-    const location = deviceLocation.trim();
-    if (!name || !location) return;
-
+  function addOnboardedDevice(ac: OnboardedAc) {
     setDevices((current) => [
       ...current,
       {
-        name,
-        location,
-        status: "healthy",
+        name: ac.name,
+        location: ac.group,
+        status: "calibrating",
         health: 100,
         load: 0,
         sparkline: "0,20 12,18 24,17 36,14 48,12 60,9 72,8 84,5",
+        macAddress: ac.macAddress,
+        meshId: ac.meshId,
+        targetTemp: ac.targetTemp,
+        calibrationDay: 1,
       },
     ]);
-    setDeviceName("");
-    setDeviceLocation("");
-    setShowAddDevice(false);
   }
 
   return (
@@ -1286,74 +1296,11 @@ export default function Home({ initialNav = "Overview" }: { initialNav?: string 
       </nav>}
 
       {showAddDevice && (
-        <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setShowAddDevice(false);
-          }}
-        >
-          <form
-            onSubmit={addDevice}
-            className="surface-card w-full max-w-md rounded-2xl border border-[var(--border)] p-5 shadow-2xl sm:p-6"
-          >
-            <div className="mb-5 flex items-start justify-between">
-              <div>
-                <p className="eyebrow">Device management</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                  Add a device
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddDevice(false)}
-                className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-                aria-label="Close"
-              >
-                <Icon name="close" />
-              </button>
-            </div>
-            <label className="mb-4 block">
-              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-                Device name
-              </span>
-              <input
-                autoFocus
-                required
-                value={deviceName}
-                onChange={(event) => setDeviceName(event.target.value)}
-                placeholder="e.g. Boiler Room 2"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500"
-              />
-            </label>
-            <label className="mb-6 block">
-              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-                Location
-              </span>
-              <input
-                required
-                value={deviceLocation}
-                onChange={(event) => setDeviceLocation(event.target.value)}
-                placeholder="e.g. North wing · Level 2"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500"
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAddDevice(false)}
-                className="rounded-lg border border-[var(--border)] px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400"
-              >
-                Add device
-              </button>
-            </div>
-          </form>
-        </div>
+        <BleOnboardingModal
+          groups={acGroups}
+          onClose={() => setShowAddDevice(false)}
+          onComplete={addOnboardedDevice}
+        />
       )}
     </div>
   );
