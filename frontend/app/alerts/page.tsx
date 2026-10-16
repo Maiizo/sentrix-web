@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Dashboard from "../dashboard/page";
 
 export const metadata: Metadata = {
   title: "Alerts | Sentrix",
@@ -7,5 +6,13 @@ export const metadata: Metadata = {
 };
 
 export default function AlertsPage() {
-  return <Dashboard initialNav="Alerts" />;
+  return (
+    <div className="py-8">
+      <p className="eyebrow mb-2">Equipment Anomaly Log</p>
+      <h1 className="text-xl font-semibold tracking-[-0.045em] sm:text-2xl">Alerts Feed</h1>
+      <p className="mt-1 text-xs text-[var(--text-muted)]">
+        Chronological log of electrical anomalies and operator resolution history.
+      </p>
+    </div>
+  );
 }
