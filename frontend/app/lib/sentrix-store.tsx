@@ -46,6 +46,18 @@ export type Alert = {
   severity: AlertSeverity;
   isResolved: boolean;
   userFeedback: boolean | null;
+  dispatchedAt?: string | null;
+};
+
+export type TeamRole = "ADMIN" | "USER";
+
+export type TeamMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: TeamRole;
+  status: "ACTIVE" | "PENDING";
+  invitedAt: string;
 };
 
 export type TelemetryRange = "1h" | "24h" | "7d";
@@ -60,7 +72,12 @@ export type TelemetryPoint = {
   isAnomaly: boolean;
 };
 
-type StoreState = { groups: Group[]; devices: Device[]; alerts: Alert[] };
+type StoreState = {
+  groups: Group[];
+  devices: Device[];
+  alerts: Alert[];
+  teamMembers: TeamMember[];
+};
 
 // ---- External store (client-only; server snapshot is null) ----
 
@@ -193,6 +210,32 @@ function createSeed(): StoreState {
         userFeedback: false,
       },
     ],
+    teamMembers: [
+      {
+        id: "usr-01",
+        name: "Alex Valdez",
+        email: "a.valdez@sentrix-facilities.com",
+        role: "ADMIN",
+        status: "ACTIVE",
+        invitedAt: iso(-60 * DAY),
+      },
+      {
+        id: "usr-02",
+        name: "Marcus Vance",
+        email: "m.vance@sentrix-facilities.com",
+        role: "USER",
+        status: "ACTIVE",
+        invitedAt: iso(-14 * DAY),
+      },
+      {
+        id: "usr-03",
+        name: "Elena Rostova",
+        email: "e.rostova@cooling-contractors.com",
+        role: "USER",
+        status: "PENDING",
+        invitedAt: iso(-2 * DAY),
+      },
+    ],
   };
 }
 
@@ -204,7 +247,12 @@ function load(): StoreState {
       Array.isArray(saved?.devices) &&
       Array.isArray(saved?.alerts)
     ) {
-      return saved as StoreState;
+      return {
+        ...saved,
+        teamMembers: Array.isArray(saved.teamMembers)
+          ? saved.teamMembers
+          : createSeed().teamMembers,
+      } as StoreState;
     }
   } catch {
     // Corrupt storage: fall through to a fresh seed.
@@ -308,6 +356,67 @@ function resolveAlert(alertId: string) {
   patchAlert(alertId, { isResolved: true });
 }
 
+function dispatchMaintenance(alertId: string) {
+  patchAlert(alertId, { dispatchedAt: new Date().toISOString() });
+}
+
+function simulateNewAnomaly(): Alert {
+  const { devices, groups } = getSnapshot();
+  const targetDevice = devices.find((d) => d.status === "ACTIVE") ?? devices[0];
+  const targetGroup = groups.find((g) => g.id === targetDevice?.groupId) ?? groups[0];
+
+  const now = Date.now();
+  const alert: Alert = {
+    id: `alt-${now.toString().slice(-5)}`,
+    deviceId: targetDevice?.id ?? "dev-crac-01",
+    groupId: targetGroup?.id ?? "grp-main-server-room",
+    timestamp: new Date(now).toISOString(),
+    actualValue: 24.8,
+    expectedMax: 16.5,
+    expectedMin: 11.2,
+    severity: "CRITICAL",
+    isResolved: false,
+    userFeedback: null,
+    dispatchedAt: null,
+  };
+
+  update((s) => ({ ...s, alerts: [alert, ...s.alerts] }));
+
+  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification("Sentrix Alert: Critical AC MCB Anomaly", {
+        body: `${targetDevice?.name ?? "AC Circuit"} spiked to 24.8A (exceeded 16.5A bound).`,
+      });
+    } catch {
+      // Browser notification failed or blocked
+    }
+  }
+
+  return alert;
+}
+
+function inviteTeamMember(name: string, email: string, role: TeamRole = "USER"): TeamMember {
+  const member: TeamMember = {
+    id: `usr-${Date.now().toString().slice(-5)}`,
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    role,
+    status: "PENDING",
+    invitedAt: new Date().toISOString(),
+  };
+  update((s) => ({ ...s, teamMembers: [...(s.teamMembers ?? []), member] }));
+  return member;
+}
+
+function resetDemoData() {
+  const seed = createSeed();
+  state = seed;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+  } catch {}
+  listeners.forEach((listener) => listener());
+}
+
 /** Deterministic PRNG so a device's chart is stable across renders. */
 function seededRandom(seed: string) {
   let h = 2166136261;
@@ -381,6 +490,10 @@ type SentrixContextValue = StoreState & {
   addDeviceToGroup: typeof addDeviceToGroup;
   submitAlertFeedback: typeof submitAlertFeedback;
   resolveAlert: typeof resolveAlert;
+  dispatchMaintenance: typeof dispatchMaintenance;
+  simulateNewAnomaly: typeof simulateNewAnomaly;
+  inviteTeamMember: typeof inviteTeamMember;
+  resetDemoData: typeof resetDemoData;
   getTelemetryWithBounds: typeof getTelemetryWithBounds;
 };
 
@@ -394,11 +507,16 @@ export function SentrixProvider({ children }: { children: ReactNode }) {
       groups: snapshot?.groups ?? [],
       devices: snapshot?.devices ?? [],
       alerts: snapshot?.alerts ?? [],
+      teamMembers: snapshot?.teamMembers ?? [],
       ready: snapshot !== null,
       createGroup,
       addDeviceToGroup,
       submitAlertFeedback,
       resolveAlert,
+      dispatchMaintenance,
+      simulateNewAnomaly,
+      inviteTeamMember,
+      resetDemoData,
       getTelemetryWithBounds,
     }),
     [snapshot],
