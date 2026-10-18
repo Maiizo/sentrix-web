@@ -121,19 +121,15 @@ function AlertsContent() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="eyebrow">Reinforcement Learning · Auto-ARIMA</p>
+              <h1 className="text-xl font-semibold tracking-[-0.045em] text-[var(--text-primary)] sm:text-2xl">
+                Alerts
+              </h1>
               {unresolvedCount > 0 && (
                 <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-600 dark:text-amber-400 ring-1 ring-inset ring-amber-500/20">
                   {unresolvedCount} Unresolved
                 </span>
               )}
             </div>
-            <h1 className="text-xl font-semibold tracking-[-0.045em] text-[var(--text-primary)] sm:text-2xl">
-              Equipment Anomaly Feed
-            </h1>
-            <p className="mt-1 text-xs text-[var(--text-secondary)] sm:text-sm">
-              Global chronological feed for operator validation and model retuning.
-            </p>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -260,11 +256,8 @@ function AlertsContent() {
               ✓
             </div>
             <h3 className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
-              No matching alerts found
+              No matching alerts
             </h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              All circuits match the current filter parameters.
-            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -354,10 +347,6 @@ function AlertsContent() {
                         {/* Deviation Description */}
                         <p className="font-mono text-sm font-medium text-[var(--text-primary)]">
                           {deviationText}
-                        </p>
-
-                        <p className="text-xs text-[var(--text-secondary)]">
-                          Auto-ARIMA 95% Confidence Interval bounds breached during real-time RMS monitoring cycle.
                         </p>
                       </div>
 

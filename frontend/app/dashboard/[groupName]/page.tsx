@@ -96,9 +96,6 @@ function LocationDetailContent() {
             <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)] sm:text-3xl">
               {group.name}
             </h1>
-            <span className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 font-mono text-[10px] tracking-wider text-[var(--text-secondary)]">
-              MESH {group.meshId}
-            </span>
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wide ${
                 isMeshHealthy
@@ -111,7 +108,7 @@ function LocationDetailContent() {
                   isMeshHealthy ? "bg-emerald-500 shadow-[0_0_6px_#10b981]" : "bg-amber-500"
                 }`}
               />
-              {isMeshHealthy ? "Mesh Healthy · Root Online" : "Mesh Initializing · Root Awaiting Devices"}
+              {isMeshHealthy ? "Online" : "Awaiting Devices"}
             </span>
           </div>
           {group.description && (
@@ -160,9 +157,6 @@ function LocationDetailContent() {
               {groupDevices.length.toString().padStart(2, "0")} SENSORS
             </span>
           </div>
-          <span className="font-mono text-[10px] text-[var(--text-muted)]">
-            ESP-Mesh Local Subnet
-          </span>
         </div>
 
         {groupDevices.length === 0 ? (
@@ -171,15 +165,12 @@ function LocationDetailContent() {
               ⚡
             </div>
             <h3 className="mt-4 text-sm font-semibold text-[var(--text-primary)]">
-              No Sensors Connected
+              No sensors connected
             </h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)] max-w-sm mx-auto">
-              This group has no provisioned circuit sensors. Click below to add a device.
-            </p>
             <button
               type="button"
               onClick={() => setShowBleModal(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400"
             >
               + Add First Device
             </button>
@@ -203,9 +194,6 @@ function LocationDetailContent() {
                       {/* 1. Sensor Name */}
                       <td className="px-5 py-4">
                         <p className="font-semibold text-[var(--text-primary)]">{device.name}</p>
-                        <p className="font-mono text-[10px] text-[var(--text-muted)]">
-                          Target AC Temp: <span className="text-amber-600 dark:text-amber-400">{device.targetTempC}°C</span>
-                        </p>
                       </td>
 
                       {/* 2. MAC Address */}
@@ -232,29 +220,31 @@ function LocationDetailContent() {
 
                       {/* 5. View Analytics & Delete Action */}
                       <td className="px-5 py-4 text-right">
-                        <div className="inline-flex items-center gap-3">
+                        <div className="inline-flex items-center gap-2">
                           <Link
                             id={`view-analytics-${device.id}`}
                             href={`/dashboard/${group.slug}/${device.id}`}
-                            className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition text-xs"
+                            className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:border-amber-500/50 hover:bg-[var(--surface-hover)] transition"
                           >
-                            View Analytics
+                            <span>View Analytics</span>
                             <span aria-hidden="true">→</span>
                           </Link>
                           <button
                             type="button"
+                            id={`delete-device-${device.id}`}
                             title={`Delete ${device.name}`}
                             aria-label={`Delete ${device.name}`}
                             onClick={() => {
-                              if (confirm(`Are you sure you want to delete the device "${device.name}"?`)) {
+                              if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
                                 deleteDevice(device.id);
                               }
                             }}
-                            className="rounded p-1 text-[var(--text-muted)] hover:bg-red-500/10 hover:text-red-500 transition"
+                            className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
                           >
                             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                             </svg>
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>

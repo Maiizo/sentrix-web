@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Brand, BrandMark } from "./brand";
+import { ThemeToggle } from "./theme-toggle";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 type AuthFormProps = {
@@ -12,7 +13,7 @@ type AuthFormProps = {
 
 function AuthArtwork() {
   return (
-    <aside className="relative hidden min-h-screen overflow-hidden border-l border-white/[0.07] bg-[#171815] lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14">
+    <aside className="relative hidden min-h-screen overflow-hidden border-l border-[var(--border)] bg-[var(--surface)] lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14">
       <div className="absolute -right-36 top-12 h-96 w-96 rounded-full bg-amber-500/[0.09] blur-[100px]" />
       <div className="absolute -left-36 bottom-8 h-80 w-80 rounded-full bg-orange-800/[0.08] blur-[100px]" />
       <div className="relative">
@@ -20,37 +21,37 @@ function AuthArtwork() {
       </div>
       <div className="relative">
         <div className="mb-5 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/15 bg-amber-500/[0.08] text-amber-400">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/15 bg-amber-500/[0.08] text-amber-500">
             <BrandMark className="h-5 w-5 rounded-md" />
           </span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400">
+          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-500">
             AC energy example
           </span>
         </div>
-        <h2 className="max-w-lg text-4xl font-semibold leading-tight tracking-[-0.06em] text-stone-100 xl:text-5xl">
+        <h2 className="max-w-lg text-4xl font-semibold leading-tight tracking-[-0.06em] text-[var(--text-primary)] xl:text-5xl">
           See the signal.
           <br />
-          <span className="text-stone-500">Waste less cooling energy.</span>
+          <span className="text-[var(--text-muted)]">Waste less cooling energy.</span>
         </h2>
-        <p className="mt-4 max-w-md text-sm leading-6 text-stone-400">
+        <p className="mt-4 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
           One clear view of AC energy use, cooling health, and the alerts that
           deserve your team’s attention.
         </p>
-        <div className="mt-9 max-w-md rounded-xl border border-white/[0.08] bg-[#1c1d19] p-4">
+        <div className="mt-9 max-w-md rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[8px] uppercase tracking-widest text-stone-500">
+            <span className="font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
               AC unit · sample power draw
             </span>
-            <span className="inline-flex items-center gap-1.5 font-mono text-[8px] text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 font-mono text-[8px] text-emerald-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               SAMPLE
             </span>
           </div>
           <div className="mt-2 flex items-end justify-between">
-            <span className="font-mono text-3xl tracking-tight text-stone-100">
-              4.82<span className="ml-1 text-sm text-amber-400">kW</span>
+            <span className="font-mono text-3xl tracking-tight text-[var(--text-primary)]">
+              4.82<span className="ml-1 text-sm text-amber-500">kW</span>
             </span>
-            <span className="mb-1 text-[10px] text-stone-500">Illustrative data</span>
+            <span className="mb-1 text-[10px] text-[var(--text-muted)]">Illustrative data</span>
           </div>
           <div className="mt-3 flex h-12 items-end gap-1">
             {[25, 38, 31, 52, 42, 57, 47, 66, 54, 76, 64, 91, 70, 84, 72, 100, 78, 89, 74, 95].map(
@@ -65,7 +66,7 @@ function AuthArtwork() {
           </div>
         </div>
       </div>
-      <div className="relative flex items-center justify-between font-mono text-[8px] uppercase tracking-widest text-stone-600">
+      <div className="relative flex items-center justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
         <span>Smarter cooling. Clear decisions.</span>
         <span>01 — 03</span>
       </div>
@@ -134,16 +135,19 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <main className="grid min-h-screen bg-[#121311] text-stone-100 lg:grid-cols-[minmax(420px,0.88fr)_minmax(0,1.12fr)]">
+    <main className="grid min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] transition-colors duration-200 lg:grid-cols-[minmax(420px,0.88fr)_minmax(0,1.12fr)]">
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between">
           <Brand />
-          <Link
-            href="/"
-            className="text-xs text-stone-500 transition hover:text-stone-200"
-          >
-            Back to home
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle showLabel={false} />
+            <Link
+              href="/"
+              className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+            >
+              Back to home
+            </Link>
+          </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col justify-center py-12">
@@ -153,10 +157,10 @@ export function AuthForm({ mode }: AuthFormProps) {
           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-500">
             {isSignup ? "Start with Sentrix" : "Welcome back"}
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--text-primary)] sm:text-4xl">
             {isSignup ? "Create your account" : "Log in to Sentrix"}
           </h1>
-          <p className="mt-2 text-sm text-stone-400">
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {isSignup
               ? "Set up your workspace and bring your fleet into focus."
               : "Your operation is right where you left it."}
@@ -165,7 +169,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             {isSignup && (
               <label className="block">
-                <span className="mb-1.5 block text-xs font-medium text-stone-300">
+                <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                   Full name
                 </span>
                 <input
@@ -173,12 +177,12 @@ export function AuthForm({ mode }: AuthFormProps) {
                   required
                   name="name"
                   placeholder="Alex Morgan"
-                  className="h-11 w-full rounded-lg border border-white/10 bg-[#191a17] px-3.5 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
+                  className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
                 />
               </label>
             )}
             <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-stone-300">
+              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Work email
               </span>
               <input
@@ -187,11 +191,11 @@ export function AuthForm({ mode }: AuthFormProps) {
                 type="email"
                 name="email"
                 placeholder="you@company.com"
-                className="h-11 w-full rounded-lg border border-white/10 bg-[#191a17] px-3.5 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
+                className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
               />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-stone-300">
+              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Password
               </span>
               <div className="relative">
@@ -202,12 +206,12 @@ export function AuthForm({ mode }: AuthFormProps) {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="At least 8 characters"
-                  className="h-11 w-full rounded-lg border border-white/10 bg-[#191a17] px-3.5 pr-16 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
+                  className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3.5 pr-16 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((visible) => !visible)}
-                  className="absolute inset-y-0 right-3 text-[10px] text-stone-500 hover:text-stone-200"
+                  className="absolute inset-y-0 right-3 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? "Hide" : "Show"}
@@ -215,7 +219,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
             </label>
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 text-[11px] text-stone-400">
+              <label className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
                 <input type="checkbox" name="remember" className="accent-amber-500" />
                 Remember me
               </label>
@@ -227,14 +231,14 @@ export function AuthForm({ mode }: AuthFormProps) {
                       "Password reset isn't connected in this preview. Contact your workspace administrator to reset your password.",
                     )
                   }
-                  className="text-[11px] font-medium text-amber-400 transition hover:text-amber-300"
+                  className="text-[11px] font-medium text-amber-500 transition hover:text-amber-400"
                 >
                   Forgot password?
                 </button>
               )}
             </div>
             {isSignup && (
-              <label className="flex items-start gap-2.5 pt-1 text-[10px] leading-5 text-stone-400">
+              <label className="flex items-start gap-2.5 pt-1 text-[10px] leading-5 text-[var(--text-secondary)]">
                 <input
                   required
                   type="checkbox"
@@ -256,16 +260,16 @@ export function AuthForm({ mode }: AuthFormProps) {
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.18em] text-stone-600">
-            <span className="h-px flex-1 bg-white/[0.08]" />
+          <div className="my-5 flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="h-px flex-1 bg-[var(--border)]" />
             or continue with
-            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="h-px flex-1 bg-[var(--border)]" />
           </div>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleOAuth("google")}
-              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-white/10 bg-[#191a17] text-xs font-medium text-stone-200 transition hover:border-white/20 hover:bg-[#1f201c]"
+              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] transition hover:border-amber-500/40 hover:bg-[var(--surface-hover)]"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
                 <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.8Z" />
@@ -278,7 +282,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             <button
               type="button"
               onClick={() => handleOAuth("azure")}
-              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-white/10 bg-[#191a17] text-xs font-medium text-stone-200 transition hover:border-white/20 hover:bg-[#1f201c]"
+              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] transition hover:border-amber-500/40 hover:bg-[var(--surface-hover)]"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
                 <path fill="#F25022" d="M1 1h10.5v10.5H1z" />
@@ -293,28 +297,28 @@ export function AuthForm({ mode }: AuthFormProps) {
           {formError && (
             <p
               role="status"
-              className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-center text-[10px] leading-4 text-amber-300"
+              className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-center text-[10px] leading-4 text-amber-500"
             >
               {formError}
             </p>
           )}
 
-          <p className="mt-6 text-center text-xs text-stone-500">
+          <p className="mt-6 text-center text-xs text-[var(--text-muted)]">
             {isSignup ? "Already have an account?" : "New to Sentrix?"}{" "}
             <Link
               href={isSignup ? "/login" : "/signup"}
-              className="font-medium text-amber-400 transition hover:text-amber-300"
+              className="font-medium text-amber-500 transition hover:text-amber-400"
             >
               {isSignup ? "Log in" : "Create an account"}
             </Link>
           </p>
 
-          <p className="mt-8 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-center text-[10px] leading-4 text-stone-500">
+          <p className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-center text-[10px] leading-4 text-[var(--text-muted)]">
             Preview mode: this form does not send or store your credentials.
           </p>
         </div>
 
-        <div className="flex justify-between font-mono text-[8px] uppercase tracking-widest text-stone-600">
+        <div className="flex justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
           <span>Sentrix · AC climate intelligence</span>
           <span>Secure workspace</span>
         </div>

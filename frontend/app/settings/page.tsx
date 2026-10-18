@@ -67,9 +67,6 @@ function UserInviteModal({
               ✕
             </button>
           </div>
-          <p className="mt-1 font-mono text-[10px] text-[var(--text-muted)]">
-            Grant workspace access to manage AC circuits and review model feedback.
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -115,7 +112,6 @@ function UserInviteModal({
               >
                 <div>
                   <p>USER (Operator)</p>
-                  <p className="font-mono text-[9px] text-[var(--text-muted)]">Resolve alerts & calibrate</p>
                 </div>
                 <input
                   type="radio"
@@ -136,7 +132,6 @@ function UserInviteModal({
               >
                 <div>
                   <p>ADMIN (Manager)</p>
-                  <p className="font-mono text-[9px] text-[var(--text-muted)]">Full mesh & user control</p>
                 </div>
                 <input
                   type="radio"
@@ -269,13 +264,9 @@ function SettingsContent() {
       <div className="max-w-4xl space-y-8">
         {/* Page Header */}
         <div>
-          <p className="eyebrow mb-1">System Administration</p>
           <h1 className="text-xl font-semibold tracking-[-0.045em] text-[var(--text-primary)] sm:text-2xl">
-            Workspace Settings
+            Settings
           </h1>
-          <p className="mt-1 text-xs text-[var(--text-secondary)] sm:text-sm">
-            Manage your supervisor credentials, organization team access, and anomaly notification channels.
-          </p>
         </div>
 
         {/* Global Feedback Messages */}
@@ -293,9 +284,6 @@ function SettingsContent() {
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Profile Settings
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Personal credentials and display information for operator feedback attribution.
-              </p>
             </div>
             {profileSaved && (
               <span className="font-mono text-xs text-emerald-500 font-semibold animate-in fade-in">
@@ -367,11 +355,8 @@ function SettingsContent() {
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                Organization Team Access
+                Team Access
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Facility team members and certified cooling supervisors authorized for this workspace.
-              </p>
             </div>
             <button
               type="button"
@@ -436,11 +421,8 @@ function SettingsContent() {
           <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                Notification Channels & Thresholds
+                Notification Preferences
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Configure real-time dispatch alerts when AC circuit currents breach Auto-ARIMA safe bounds.
-              </p>
             </div>
             {notificationsSaved && (
               <span className="font-mono text-xs text-emerald-500 font-semibold animate-in fade-in">
@@ -454,10 +436,10 @@ function SettingsContent() {
             <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
               <div>
                 <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  Email Alerts for AC Anomalies
+                  Email Alerts
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Receive email digest with telemetry chart screenshots whenever a WARNING or CRITICAL anomaly triggers.
+                  Receive email digest when an alert triggers.
                 </p>
               </div>
               <button
@@ -481,10 +463,10 @@ function SettingsContent() {
             <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
               <div>
                 <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  SMS Alerts for Critical Breaches
+                  SMS Alerts
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Instant SMS dispatch to on-duty facilities managers for equipment overload (&gt;150% baseline).
+                  Instant SMS dispatch for critical alerts.
                 </p>
               </div>
               <button
@@ -511,7 +493,7 @@ function SettingsContent() {
                   Browser Push Notifications
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Displays native desktop notifications even when this browser tab is running in the background.
+                  Native desktop notifications when alerts occur.
                 </p>
               </div>
               <button
@@ -536,12 +518,11 @@ function SettingsContent() {
           <div className="mt-8 border-t border-[var(--border)] pt-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="eyebrow text-red-500 mb-0.5">Demo & Maintenance Zone</p>
                 <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  Reset Demo Telemetry & Node State
+                  Reset Demo Data
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Restore original mock groups, AC circuit units, and initial alert history.
+                  Restore default sample groups, devices, and alerts.
                 </p>
               </div>
 

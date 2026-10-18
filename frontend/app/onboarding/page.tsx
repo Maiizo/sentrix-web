@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Brand } from "../components/brand";
+import { ThemeToggle } from "../components/theme-toggle";
 
 const roles = [
   "Facilities / Building operations",
@@ -25,15 +26,18 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#121311] px-5 py-6 text-stone-100 sm:px-8">
+    <main className="min-h-screen bg-[var(--canvas)] px-5 py-6 text-[var(--text-primary)] transition-colors duration-200 sm:px-8">
       <header className="mx-auto flex max-w-6xl items-center justify-between">
         <Brand />
-        <Link
-          href="/"
-          className="text-xs text-stone-500 transition hover:text-stone-200"
-        >
-          Exit setup
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle showLabel={false} />
+          <Link
+            href="/"
+            className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+          >
+            Exit setup
+          </Link>
+        </div>
       </header>
 
       <section className="mx-auto mt-12 max-w-[560px] sm:mt-20">
@@ -42,7 +46,7 @@ export default function OnboardingPage() {
             <span
               key={step}
               className={`h-1 flex-1 rounded-full ${
-                step === 0 ? "bg-amber-500" : "bg-white/10"
+                step === 0 ? "bg-amber-500" : "bg-[var(--border)]"
               }`}
             />
           ))}
@@ -50,19 +54,16 @@ export default function OnboardingPage() {
         <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-500">
           Workspace setup · Step 1 of 2
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
-          Let’s set up your workspace.
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--text-primary)] sm:text-4xl">
+          Set up your workspace
         </h1>
-        <p className="mt-3 text-sm leading-6 text-stone-400">
-          A little context helps us tailor your equipment overview.
-        </p>
 
         <form
           onSubmit={finishOnboarding}
-          className="mt-8 space-y-5 rounded-2xl border border-white/[0.08] bg-[#191a17] p-5 sm:p-7"
+          className="mt-8 space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 shadow-sm"
         >
           <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-stone-300">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
               Workspace name
             </span>
             <input
@@ -71,27 +72,29 @@ export default function OnboardingPage() {
               value={workspace}
               onChange={(event) => setWorkspace(event.target.value)}
               placeholder="e.g. Acme Manufacturing"
-              className="h-11 w-full rounded-lg border border-white/10 bg-[#121311] px-3.5 text-sm outline-none placeholder:text-stone-600 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
+              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/10"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-stone-300">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
               What best describes your role?
             </span>
             <select
               value={role}
               onChange={(event) => setRole(event.target.value)}
-              className="h-11 w-full rounded-lg border border-white/10 bg-[#121311] px-3.5 text-sm text-stone-200 outline-none focus:border-amber-500/70"
+              className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3.5 text-sm text-[var(--text-primary)] outline-none focus:border-amber-500/70"
             >
               {roles.map((option) => (
-                <option key={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </label>
 
           <div>
-            <p className="mb-2 text-xs font-medium text-stone-300">
+            <p className="mb-2 text-xs font-medium text-[var(--text-secondary)]">
               Which air-conditioning systems will you start with?
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -101,8 +104,8 @@ export default function OnboardingPage() {
                     key={asset}
                     className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-3 text-[11px] transition ${
                       index < 2
-                        ? "border-amber-500/35 bg-amber-500/[0.06] text-stone-100"
-                        : "border-white/[0.07] text-stone-400 hover:border-white/15"
+                        ? "border-amber-500/35 bg-amber-500/[0.06] text-[var(--text-primary)] font-medium"
+                        : "border-[var(--border)] bg-[var(--canvas)] text-[var(--text-muted)] hover:border-amber-500/30"
                     }`}
                   >
                     <input
@@ -124,11 +127,6 @@ export default function OnboardingPage() {
             Create workspace <span aria-hidden="true">→</span>
           </button>
         </form>
-
-        <p className="mt-5 text-center text-[10px] text-stone-600">
-          AC is Sentrix’s first focus. Support for other machine types is part
-          of the longer-term direction, not this initial setup.
-        </p>
       </section>
     </main>
   );

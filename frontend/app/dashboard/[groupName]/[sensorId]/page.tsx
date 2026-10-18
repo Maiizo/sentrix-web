@@ -43,8 +43,11 @@ function DynamicSensorStatusBadge({ device }: { device: Device }) {
 function SensorAnalyticsContent() {
   const router = useRouter();
   const params = useParams();
-  const groupSlug = typeof params?.groupName === "string" ? params.groupName : "";
-  const sensorId = typeof params?.sensorId === "string" ? params.sensorId : "";
+  const rawGroup = typeof params?.groupName === "string" ? params.groupName : Array.isArray(params?.groupName) ? params.groupName[0] : "";
+  const rawSensor = typeof params?.sensorId === "string" ? params.sensorId : Array.isArray(params?.sensorId) ? params.sensorId[0] : "";
+
+  const groupSlug = decodeURIComponent(rawGroup || "");
+  const sensorId = decodeURIComponent(rawSensor || "");
 
   const { ready, groups, devices, alerts, deleteDevice, submitAlertFeedback, resolveAlert, getTelemetryWithBounds } = useSentrix();
 
@@ -56,15 +59,15 @@ function SensorAnalyticsContent() {
     );
   }
 
-  const group = groups.find((g) => g.slug === groupSlug);
-  const device = devices.find((d) => d.id === sensorId || d.macAddress === sensorId);
+  const group = groups.find((g) => g.slug === groupSlug || g.id === groupSlug || g.slug === rawGroup || g.id === rawGroup);
+  const device = devices.find((d) => d.id === sensorId || d.macAddress === sensorId || d.id === rawSensor || d.macAddress === rawSensor);
 
   if (!group || !device) {
     return (
       <div className="py-24 text-center">
         <h1 className="text-lg font-semibold text-[var(--text-primary)]">Sensor Not Found</h1>
         <p className="mb-4 mt-1 text-xs text-[var(--text-muted)]">
-          Could not locate the requested sensor in this location mesh.
+          The requested sensor could not be located.
         </p>
         <Link
           href={group ? `/dashboard/${group.slug}` : "/dashboard"}
@@ -113,8 +116,8 @@ function SensorAnalyticsContent() {
             </span>
             <DynamicSensorStatusBadge device={device} />
           </div>
-          <p className="mt-2 text-xs text-[var(--text-muted)] sm:text-sm">
-            Monitored circuit on <span className="text-[var(--text-secondary)] font-medium">{group.name}</span>.
+          <p className="mt-1 text-xs text-[var(--text-muted)] sm:text-sm">
+            {group.name}
           </p>
         </div>
 
@@ -123,7 +126,7 @@ function SensorAnalyticsContent() {
             type="button"
             id="delete-sensor-button"
             onClick={() => {
-              if (confirm(`Are you sure you want to delete the sensor "${device.name}"?`)) {
+              if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
                 deleteDevice(device.id);
                 router.push(`/dashboard/${group.slug}`);
               }
@@ -155,37 +158,28 @@ function SensorAnalyticsContent() {
             </span>
             <span className="text-base text-amber-500 font-semibold">Amps</span>
           </div>
-          <p className="mt-2 font-mono text-[10px] text-[var(--text-muted)]">
-            Continuous electrical root-mean-square current draw
-          </p>
         </div>
 
         {/* Target AC Temperature Setpoint */}
         <div className="surface-card rounded-xl border border-[var(--border)] p-5">
-          <p className="eyebrow">Target AC Setpoint</p>
+          <p className="eyebrow">Target Setpoint</p>
           <div className="mt-2 flex items-baseline gap-2 font-mono">
             <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400">
               {device.targetTempC}
             </span>
             <span className="text-base text-[var(--text-secondary)]">°C</span>
           </div>
-          <p className="mt-2 font-mono text-[10px] text-[var(--text-muted)]">
-            Thermostat control setpoint for this cooling circuit
-          </p>
         </div>
 
-        {/* Expected ARIMA Range */}
+        {/* Expected Safe Range */}
         <div className="surface-card rounded-xl border border-[var(--border)] p-5">
-          <p className="eyebrow">Expected Auto-ARIMA Range</p>
+          <p className="eyebrow">Expected Safe Range</p>
           <div className="mt-2 flex items-baseline gap-2 font-mono">
             <span className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
               {expectedMin} – {expectedMax}
             </span>
             <span className="text-xs text-[var(--text-muted)]">A</span>
           </div>
-          <p className="mt-2 font-mono text-[10px] text-[var(--text-muted)]">
-            95% Confidence interval computed dynamically from diurnal load
-          </p>
         </div>
       </div>
 
@@ -211,7 +205,7 @@ function SensorAnalyticsContent() {
 
         {localAlerts.length === 0 ? (
           <div className="rounded-lg border border-[var(--border)] bg-[var(--canvas)] p-8 text-center text-xs text-[var(--text-muted)]">
-            No historical anomalies recorded. Circuit operating within baseline parameters.
+            No anomalies recorded for this sensor.
           </div>
         ) : (
           <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--canvas)]">

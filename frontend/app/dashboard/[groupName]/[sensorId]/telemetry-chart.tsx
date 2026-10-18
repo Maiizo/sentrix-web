@@ -27,7 +27,8 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+  const data = payload[0]?.payload;
+  if (!data) return null;
 
   return (
     <div className="surface-card min-w-56 rounded-xl border border-[var(--border)] p-3 shadow-xl text-xs space-y-1.5 backdrop-blur-md">
@@ -46,7 +47,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         </span>
       </div>
       <div className="flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
-        <span>ARIMA Safe Zone:</span>
+        <span>Safe Zone:</span>
         <span className="text-amber-500/90">
           {data.lowerBound.toFixed(2)} – {data.upperBound.toFixed(2)} A
         </span>
@@ -67,10 +68,12 @@ export function TelemetryChart({ deviceId }: TelemetryChartProps) {
     bounds: [pt.lowerBound, pt.upperBound] as [number, number],
   }));
 
-  // Find min/max for dynamic Y-Axis scale
-  const allValues = rawData.flatMap((d) => [d.rmsCurrent, d.lowerBound, d.upperBound]);
-  const minY = Math.max(0, Math.floor(Math.min(...allValues) - 1));
-  const maxY = Math.ceil(Math.max(...allValues) + 1.5);
+  // Find min/max for dynamic Y-Axis scale safely
+  const allValues = rawData
+    .flatMap((d) => [d.rmsCurrent, d.lowerBound, d.upperBound])
+    .filter((v) => typeof v === "number" && Number.isFinite(v));
+  const minY = allValues.length > 0 ? Math.max(0, Math.floor(Math.min(...allValues) - 1)) : 0;
+  const maxY = allValues.length > 0 ? Math.ceil(Math.max(...allValues) + 1.5) : 25;
 
   const anomalyCount = rawData.filter((d) => d.isAnomaly).length;
 
@@ -80,16 +83,13 @@ export function TelemetryChart({ deviceId }: TelemetryChartProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="eyebrow text-[10px]">Auto-ARIMA Confidence Range & Electrical Telemetry</h2>
+            <h2 className="eyebrow text-[10px]">Telemetry & Safe Range</h2>
             {anomalyCount > 0 && (
               <span className="rounded-md border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-red-500">
                 {anomalyCount} {anomalyCount === 1 ? "ANOMALY" : "ANOMALIES"}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">
-            Solid line shows live RMS draw. Shaded envelope shows continuous dynamic prediction bounds.
-          </p>
         </div>
 
         {/* Timeframe Toggles */}
@@ -136,8 +136,13 @@ export function TelemetryChart({ deviceId }: TelemetryChartProps) {
 
       {/* Recharts Composed Area + Line Chart */}
       <div className="h-80 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+        {chartData.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-xs text-[var(--text-muted)]">
+            No telemetry data recorded for this timeframe.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
             <CartesianGrid stroke="var(--chart-grid, #2b2c27)" strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="timeLabel"
@@ -210,6 +215,7 @@ export function TelemetryChart({ deviceId }: TelemetryChartProps) {
             />
           </ComposedChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

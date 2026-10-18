@@ -197,7 +197,7 @@ export function BleOnboardingModal({
                   Add AC Circuit Sensor to {group.name}
                 </h2>
                 <p className="font-mono text-[10px] text-[var(--text-muted)]">
-                  Mesh Provisioning · UUID {SENTRIX_BLE_SERVICE_UUID.slice(0, 18)}…
+                  Bluetooth Setup
                 </p>
               </div>
             </div>
@@ -231,7 +231,7 @@ export function BleOnboardingModal({
             <span className={step === 1 ? "text-amber-500 font-semibold" : ""}>1. Scan</span>
             <span className={step === 2 ? "text-amber-500 font-semibold" : ""}>2. Hardware</span>
             <span className={step === 3 ? "text-amber-500 font-semibold" : ""}>3. PIN</span>
-            <span className={step === 4 ? "text-amber-500 font-semibold" : ""}>4. Wi-Fi & Mesh</span>
+            <span className={step === 4 ? "text-amber-500 font-semibold" : ""}>4. Wi-Fi</span>
             <span className={step === 5 ? "text-emerald-500 font-semibold" : ""}>5. Active</span>
           </div>
         </div>
@@ -452,7 +452,7 @@ export function BleOnboardingModal({
                   disabled={pinCode.length !== 6}
                   className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400 disabled:opacity-50"
                 >
-                  Next: Configure Wi-Fi & Mesh →
+                  Next: Configure Wi-Fi →
                 </button>
               </div>
             </form>
@@ -464,10 +464,10 @@ export function BleOnboardingModal({
               <div>
                 <p className="eyebrow mb-1">Step 4 of 5</p>
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                  Wi-Fi Gateway & Mesh Credentials
+                  Wi-Fi Credentials
                 </h3>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  Provide local Wi-Fi credentials to bridge telemetry from the ESP-Mesh root gateway.
+                  Provide local Wi-Fi credentials for telemetry transmission.
                 </p>
               </div>
 
