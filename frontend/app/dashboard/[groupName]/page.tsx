@@ -190,7 +190,12 @@ function LocationDetailContent() {
                 </thead>
                 <tbody className="divide-y divide-[var(--border)] font-normal text-[var(--text-secondary)]">
                   {groupDevices.map((device) => (
-                    <tr key={device.id} className="transition hover:bg-[var(--surface-hover)]">
+                    <tr
+                      key={device.id}
+                      data-context-type="device"
+                      data-context-id={device.id}
+                      className="transition hover:bg-[var(--surface-hover)]"
+                    >
                       {/* 1. Sensor Name */}
                       <td className="px-5 py-4">
                         <p className="font-semibold text-[var(--text-primary)]">{device.name}</p>

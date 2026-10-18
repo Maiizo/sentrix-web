@@ -218,6 +218,8 @@ export default function DashboardPage() {
               return (
                 <div
                   key={group.id}
+                  data-context-type="group"
+                  data-context-id={group.id}
                   className={`surface-card group relative flex min-h-[150px] flex-col rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg ${
                     alertCount ? "border-red-500/30" : "border-[var(--border)]"
                   }`}

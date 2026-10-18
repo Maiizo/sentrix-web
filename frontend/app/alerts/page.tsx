@@ -277,6 +277,8 @@ function AlertsContent() {
               return (
                 <div
                   key={alert.id}
+                  data-context-type="alert"
+                  data-context-id={alert.id}
                   className={`surface-card rounded-2xl border transition shadow-sm ${
                     alert.isResolved
                       ? "border-[var(--border)] opacity-85"

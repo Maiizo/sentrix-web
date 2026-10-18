@@ -210,7 +210,12 @@ function SensorAnalyticsContent() {
         ) : (
           <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--canvas)]">
             {localAlerts.map((alert) => (
-              <div key={alert.id} className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={alert.id}
+                data-context-type="alert"
+                data-context-id={alert.id}
+                className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />

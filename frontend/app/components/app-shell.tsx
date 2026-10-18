@@ -8,6 +8,7 @@ import { AccountSettingsModal } from "./account-settings-modal";
 import { useSentrix } from "../lib/sentrix-store";
 import { useTheme } from "../lib/theme-context";
 import { ThemeToggle } from "./theme-toggle";
+import { SentrixContextMenu } from "./context-menu";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 const NAV_LINKS = [
@@ -194,6 +195,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         isOpen={showAccountModal}
         onClose={() => setShowAccountModal(false)}
       />
+
+      {/* Context-aware Right-Click Menu */}
+      <SentrixContextMenu isDark={isDark} onToggleTheme={toggleTheme} />
     </div>
   );
 }
