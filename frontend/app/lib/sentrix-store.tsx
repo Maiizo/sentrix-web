@@ -364,6 +364,27 @@ function addDeviceToGroup(
   return device;
 }
 
+function deleteGroup(groupId: string) {
+  update((s) => {
+    // Find all devices in this group to also cascade delete alerts associated with them
+    const groupDeviceIds = new Set(s.devices.filter((d) => d.groupId === groupId).map((d) => d.id));
+    return {
+      ...s,
+      groups: s.groups.filter((g) => g.id !== groupId),
+      devices: s.devices.filter((d) => d.groupId !== groupId),
+      alerts: s.alerts.filter((a) => a.groupId !== groupId && !groupDeviceIds.has(a.deviceId)),
+    };
+  });
+}
+
+function deleteDevice(deviceId: string) {
+  update((s) => ({
+    ...s,
+    devices: s.devices.filter((d) => d.id !== deviceId),
+    alerts: s.alerts.filter((a) => a.deviceId !== deviceId),
+  }));
+}
+
 function patchAlert(alertId: string, patch: Partial<Alert>) {
   update((s) => ({
     ...s,
@@ -532,7 +553,9 @@ type SentrixContextValue = StoreState & {
   /** False during server prerender and hydration; true once localStorage is loaded. */
   ready: boolean;
   createGroup: typeof createGroup;
+  deleteGroup: typeof deleteGroup;
   addDeviceToGroup: typeof addDeviceToGroup;
+  deleteDevice: typeof deleteDevice;
   submitAlertFeedback: typeof submitAlertFeedback;
   resolveAlert: typeof resolveAlert;
   dispatchMaintenance: typeof dispatchMaintenance;
@@ -559,7 +582,9 @@ export function SentrixProvider({ children }: { children: ReactNode }) {
       userProfile: snapshot?.userProfile ?? DEFAULT_USER_PROFILE,
       ready: snapshot !== null,
       createGroup,
+      deleteGroup,
       addDeviceToGroup,
+      deleteDevice,
       submitAlertFeedback,
       resolveAlert,
       dispatchMaintenance,

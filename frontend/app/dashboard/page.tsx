@@ -86,9 +86,10 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function DashboardPage() {
-  const { ready, groups, devices, alerts } = useSentrix();
+  const { ready, groups, devices, alerts, deleteGroup } = useSentrix();
   const [anomalyWindow, setAnomalyWindow] = useState<AnomalyWindow>("24h");
   const [showCreate, setShowCreate] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
 
   if (!ready) {
     return (
@@ -215,39 +216,62 @@ export default function DashboardPage() {
               const alertCount = unresolved.filter((a) => a.groupId === group.id).length;
 
               return (
-                <Link
+                <div
                   key={group.id}
-                  href={`/dashboard/${group.slug}`}
-                  className={`surface-card group flex min-h-[150px] flex-col rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 ${
+                  className={`surface-card group relative flex min-h-[150px] flex-col rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg ${
                     alertCount ? "border-red-500/30" : "border-[var(--border)]"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-sm font-semibold tracking-[-0.02em]">{group.name}</h3>
-                    <span className="shrink-0 rounded border border-[var(--border)] bg-[var(--canvas)] px-1.5 py-0.5 font-mono text-[9px] tracking-wider text-[var(--text-secondary)]">
-                      MESH {group.meshId.slice(0, 8)}
-                    </span>
-                  </div>
-                  <div className="mt-auto flex items-end justify-between border-t border-[var(--border)] pt-3">
-                    <div>
-                      <p className="eyebrow">Active sensors</p>
-                      <p className="mt-1 font-mono text-xs text-[var(--text-secondary)]">
-                        {pad(activeCount)} / {pad(groupDevices.length)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="eyebrow">Active alerts</p>
-                      <p
-                        className={`mt-1 inline-flex items-center gap-1.5 font-mono text-xs ${
-                          alertCount ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"
-                        }`}
+                  <div className="flex items-start justify-between gap-2">
+                    <Link
+                      href={`/dashboard/${group.slug}`}
+                      className="text-sm font-semibold tracking-[-0.02em] text-[var(--text-primary)] hover:text-amber-500 transition line-clamp-1"
+                    >
+                      {group.name}
+                    </Link>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        title={`Delete ${group.name}`}
+                        aria-label={`Delete ${group.name}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${group.name}" and all its devices?`)) {
+                            deleteGroup(group.id);
+                          }
+                        }}
+                        className="rounded p-1 text-[var(--text-muted)] opacity-60 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition"
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${alertCount ? "bg-red-500" : "bg-emerald-500"}`} />
-                        {pad(alertCount)}
-                      </p>
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                </Link>
+
+                  <Link href={`/dashboard/${group.slug}`} className="mt-auto block pt-3">
+                    <div className="flex items-end justify-between border-t border-[var(--border)] pt-3">
+                      <div>
+                        <p className="eyebrow">Active sensors</p>
+                        <p className="mt-1 font-mono text-xs text-[var(--text-secondary)]">
+                          {pad(activeCount)} / {pad(groupDevices.length)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="eyebrow">Active alerts</p>
+                        <p
+                          className={`mt-1 inline-flex items-center gap-1.5 font-mono text-xs ${
+                            alertCount ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${alertCount ? "bg-red-500" : "bg-emerald-500"}`} />
+                          {pad(alertCount)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
               );
             })}
           </div>

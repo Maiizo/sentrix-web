@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useSentrix, type Device } from "../../lib/sentrix-store";
 import { BleOnboardingModal } from "./ble-onboarding-modal";
@@ -41,9 +41,10 @@ function StatusBadge({ device }: { device: Device }) {
 }
 
 function LocationDetailContent() {
+  const router = useRouter();
   const params = useParams();
   const groupSlug = typeof params?.groupName === "string" ? params.groupName : "";
-  const { ready, groups, devices } = useSentrix();
+  const { ready, groups, devices, deleteGroup, deleteDevice } = useSentrix();
   const [showBleModal, setShowBleModal] = useState(false);
 
   if (!ready) {
@@ -120,16 +121,34 @@ function LocationDetailContent() {
           )}
         </div>
 
-        {/* Primary CTA */}
-        <button
-          type="button"
-          id="add-device-to-group-button"
-          onClick={() => setShowBleModal(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
-        >
-          <span aria-hidden="true" className="text-base font-bold leading-none">+</span>
-          Add Device to this Group
-        </button>
+        {/* Primary CTAs */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            id="delete-group-button"
+            onClick={() => {
+              if (confirm(`Are you sure you want to delete the group "${group.name}" and all ${groupDevices.length} connected device(s)?`)) {
+                deleteGroup(group.id);
+                router.push("/dashboard");
+              }
+            }}
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 text-xs font-medium text-red-500 transition hover:bg-red-500/20"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            </svg>
+            Delete Group
+          </button>
+          <button
+            type="button"
+            id="add-device-to-group-button"
+            onClick={() => setShowBleModal(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
+          >
+            <span aria-hidden="true" className="text-base font-bold leading-none">+</span>
+            Add Device
+          </button>
+        </div>
       </div>
 
       {/* Device Inventory Table Section */}
@@ -211,16 +230,33 @@ function LocationDetailContent() {
                         )}
                       </td>
 
-                      {/* 5. View Analytics Action Link */}
+                      {/* 5. View Analytics & Delete Action */}
                       <td className="px-5 py-4 text-right">
-                        <Link
-                          id={`view-analytics-${device.id}`}
-                          href={`/dashboard/${group.slug}/${device.id}`}
-                          className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition text-xs"
-                        >
-                          View Analytics
-                          <span aria-hidden="true">→</span>
-                        </Link>
+                        <div className="inline-flex items-center gap-3">
+                          <Link
+                            id={`view-analytics-${device.id}`}
+                            href={`/dashboard/${group.slug}/${device.id}`}
+                            className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition text-xs"
+                          >
+                            View Analytics
+                            <span aria-hidden="true">→</span>
+                          </Link>
+                          <button
+                            type="button"
+                            title={`Delete ${device.name}`}
+                            aria-label={`Delete ${device.name}`}
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete the device "${device.name}"?`)) {
+                                deleteDevice(device.id);
+                              }
+                            }}
+                            className="rounded p-1 text-[var(--text-muted)] hover:bg-red-500/10 hover:text-red-500 transition"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

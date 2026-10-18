@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { useSentrix, type Device } from "../../../lib/sentrix-store";
 import { TelemetryChart } from "./telemetry-chart";
@@ -41,11 +41,12 @@ function DynamicSensorStatusBadge({ device }: { device: Device }) {
 }
 
 function SensorAnalyticsContent() {
+  const router = useRouter();
   const params = useParams();
   const groupSlug = typeof params?.groupName === "string" ? params.groupName : "";
   const sensorId = typeof params?.sensorId === "string" ? params.sensorId : "";
 
-  const { ready, groups, devices, alerts, submitAlertFeedback, resolveAlert, getTelemetryWithBounds } = useSentrix();
+  const { ready, groups, devices, alerts, deleteDevice, submitAlertFeedback, resolveAlert, getTelemetryWithBounds } = useSentrix();
 
   if (!ready) {
     return (
@@ -117,12 +118,30 @@ function SensorAnalyticsContent() {
           </p>
         </div>
 
-        <Link
-          href={`/dashboard/${group.slug}`}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
-        >
-          ← Back to {group.name}
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            id="delete-sensor-button"
+            onClick={() => {
+              if (confirm(`Are you sure you want to delete the sensor "${device.name}"?`)) {
+                deleteDevice(device.id);
+                router.push(`/dashboard/${group.slug}`);
+              }
+            }}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 text-xs font-medium text-red-500 transition hover:bg-red-500/20"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            </svg>
+            Delete Sensor
+          </button>
+          <Link
+            href={`/dashboard/${group.slug}`}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
+          >
+            ← Back to {group.name}
+          </Link>
+        </div>
       </div>
 
       {/* 2. Live Metric Cards Section */}
