@@ -3,13 +3,9 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { AppShell } from "../components/app-shell";
-import {
-  useSentrix,
-  type AlertSeverity,
-} from "../lib/sentrix-store";
+import { useSentrix } from "../lib/sentrix-store";
 
 type DateFilter = "all" | "24h" | "7d";
-type SeverityFilter = "all" | AlertSeverity;
 type StatusFilter = "all" | "unresolved" | "resolved";
 
 function formatRelativeTime(isoString: string): string {
@@ -41,20 +37,17 @@ function AlertsContent() {
     groups,
     submitAlertFeedback,
     resolveAlert,
-    dispatchMaintenance,
     simulateNewAnomaly,
   } = useSentrix();
 
-  // 4 Top-bar Filter Controls
+  // Top-bar Filter Controls
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
-  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("unresolved");
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   function triggerSimulateAnomaly() {
-    // Request notification permission if not yet decided
     if (
       typeof window !== "undefined" &&
       "Notification" in window &&
@@ -66,7 +59,7 @@ function AlertsContent() {
     const newAlert = simulateNewAnomaly();
     const dev = devices.find((d) => d.id === newAlert.deviceId);
     showToast(
-      `CRITICAL Anomaly simulated on ${dev?.name ?? "AC Circuit"} (${newAlert.actualValue} A)!`,
+      `Anomaly simulated on ${dev?.name ?? "AC Circuit"} (${newAlert.actualValue} A)!`,
     );
   }
 
@@ -96,12 +89,7 @@ function AlertsContent() {
           return false;
         }
 
-        // 3. Severity Filter
-        if (severityFilter !== "all" && alert.severity !== severityFilter) {
-          return false;
-        }
-
-        // 4. Status Filter
+        // 3. Status Filter
         if (statusFilter === "unresolved" && alert.isResolved) {
           return false;
         }
@@ -112,7 +100,7 @@ function AlertsContent() {
         return true;
       })
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [alerts, dateFilter, groupFilter, severityFilter, statusFilter]);
+  }, [alerts, dateFilter, groupFilter, statusFilter]);
 
   const unresolvedCount = alerts.filter((a) => !a.isResolved).length;
 
@@ -135,7 +123,7 @@ function AlertsContent() {
             <div className="flex items-center gap-2">
               <p className="eyebrow">Reinforcement Learning · Auto-ARIMA</p>
               {unresolvedCount > 0 && (
-                <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-red-500 ring-1 ring-inset ring-red-500/20">
+                <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-600 dark:text-amber-400 ring-1 ring-inset ring-amber-500/20">
                   {unresolvedCount} Unresolved
                 </span>
               )}
@@ -144,7 +132,7 @@ function AlertsContent() {
               Equipment Anomaly Feed
             </h1>
             <p className="mt-1 text-xs text-[var(--text-secondary)] sm:text-sm">
-              Global chronological feed for human-in-the-loop validation, model retuning, and rapid field maintenance.
+              Global chronological feed for operator validation and model retuning.
             </p>
           </div>
 
@@ -178,9 +166,9 @@ function AlertsContent() {
           </div>
         )}
 
-        {/* 4 Top-bar Filter Controls */}
+        {/* Filter Controls (Top Bar) */}
         <div className="surface-card rounded-2xl border border-[var(--border)] p-4 shadow-sm">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {/* Filter 1: Date */}
             <div>
               <label
@@ -224,27 +212,7 @@ function AlertsContent() {
               </select>
             </div>
 
-            {/* Filter 3: Severity */}
-            <div>
-              <label
-                htmlFor="filter-severity"
-                className="mb-1 block font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]"
-              >
-                Severity Level
-              </label>
-              <select
-                id="filter-severity"
-                value={severityFilter}
-                onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-amber-500 focus:outline-none"
-              >
-                <option value="all">All Severities</option>
-                <option value="WARNING">WARNING Only</option>
-                <option value="CRITICAL">CRITICAL Only</option>
-              </select>
-            </div>
-
-            {/* Filter 4: Status */}
+            {/* Filter 3: Status */}
             <div>
               <label
                 htmlFor="filter-status"
@@ -269,16 +237,12 @@ function AlertsContent() {
             <span>
               Showing {filteredAlerts.length} of {alerts.length} total alerts
             </span>
-            {(dateFilter !== "all" ||
-              groupFilter !== "all" ||
-              severityFilter !== "all" ||
-              statusFilter !== "unresolved") && (
+            {(dateFilter !== "all" || groupFilter !== "all" || statusFilter !== "unresolved") && (
               <button
                 type="button"
                 onClick={() => {
                   setDateFilter("all");
                   setGroupFilter("all");
-                  setSeverityFilter("all");
                   setStatusFilter("all");
                 }}
                 className="text-amber-500 hover:underline"
@@ -299,7 +263,7 @@ function AlertsContent() {
               No matching alerts found
             </h3>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              All monitored AC MCB circuits match the current filter parameters.
+              All circuits match the current filter parameters.
             </p>
           </div>
         ) : (
@@ -323,42 +287,22 @@ function AlertsContent() {
                   className={`surface-card rounded-2xl border transition shadow-sm ${
                     alert.isResolved
                       ? "border-[var(--border)] opacity-85"
-                      : alert.severity === "CRITICAL"
-                        ? "border-red-500/30 hover:border-red-500/50"
-                        : "border-amber-500/30 hover:border-amber-500/50"
+                      : "border-amber-500/30 hover:border-amber-500/50"
                   }`}
                 >
                   <div className="p-5 sm:p-6">
-                    {/* Card Top Row: Badges and Timestamps */}
+                    {/* Card Top Row: Status and Timestamps */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
                       <div className="flex items-center gap-2">
-                        {/* Severity Badge */}
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider uppercase ${
-                            alert.severity === "CRITICAL"
-                              ? "bg-red-500/15 text-red-500 border border-red-500/30"
-                              : "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              alert.severity === "CRITICAL"
-                                ? "bg-red-500 animate-pulse"
-                                : "bg-amber-500"
-                            }`}
-                          />
-                          {alert.severity}
-                        </span>
-
-                        {/* Status Badge */}
+                        <span className={`h-2 w-2 rounded-full ${alert.isResolved ? "bg-emerald-500" : "bg-red-500 animate-pulse"}`} />
                         <span
                           className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold ${
                             alert.isResolved
                               ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                              : "bg-[var(--surface-hover)] text-[var(--text-muted)] border border-[var(--border)]"
+                              : "bg-red-500/10 text-red-500 border border-red-500/20"
                           }`}
                         >
-                          {alert.isResolved ? "✓ Resolved" : "Active"}
+                          {alert.isResolved ? "✓ Resolved" : "Active Anomaly"}
                         </span>
                       </div>
 
@@ -423,11 +367,7 @@ function AlertsContent() {
                           <p className="font-mono text-[9px] uppercase tracking-wider text-[var(--text-muted)]">
                             Measured Current
                           </p>
-                          <p
-                            className={`font-mono text-lg font-bold ${
-                              alert.severity === "CRITICAL" ? "text-red-500" : "text-amber-500"
-                            }`}
-                          >
+                          <p className="font-mono text-lg font-bold text-red-500">
                             {alert.actualValue.toFixed(2)} A
                           </p>
                         </div>
@@ -443,31 +383,25 @@ function AlertsContent() {
                       </div>
                     </div>
 
-                    {/* Card Bottom: Human-in-the-Loop Reinforcement Learning & Actions */}
+                    {/* Card Bottom: Human-in-the-Loop Validation & Actions */}
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] pt-4">
-                      {/* Reinforcement Learning UI */}
+                      {/* Only 2 Feedback Options: "Valid Issue" and "False Alarm" */}
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                          Operator Validation:
-                        </span>
-
                         {alert.userFeedback === null ? (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => submitAlertFeedback(alert.id, true)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-mono text-xs font-semibold text-emerald-500 hover:bg-emerald-500/20 transition"
+                              className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-emerald-500 hover:border-emerald-500/40 transition"
                             >
-                              <span>👍</span>
-                              <span>True Anomaly (Check)</span>
+                              Valid Issue
                             </button>
                             <button
                               type="button"
                               onClick={() => submitAlertFeedback(alert.id, false)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-1.5 font-mono text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-red-400 transition"
+                              className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-amber-500 hover:border-amber-500/40 transition"
                             >
-                              <span>👎</span>
-                              <span>False Alarm (X)</span>
+                              False Alarm
                             </button>
                           </div>
                         ) : (
@@ -479,7 +413,7 @@ function AlertsContent() {
                                   : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                               }`}
                             >
-                              {alert.userFeedback === true ? "✓ Feedback recorded: True Positive" : "✗ Feedback recorded: False Positive"}
+                              {alert.userFeedback === true ? "✓ Feedback: Valid Issue" : "✕ Feedback: False Alarm"}
                             </span>
                             <button
                               type="button"
@@ -492,29 +426,8 @@ function AlertsContent() {
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        {/* Maintenance Dispatch Button */}
-                        {alert.dispatchedAt ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-500">
-                            <span>🛠️</span>
-                            <span>Dispatched {formatRelativeTime(alert.dispatchedAt)}</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              dispatchMaintenance(alert.id);
-                              showToast(`Maintenance dispatched for ${device?.name ?? "circuit"}!`);
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:border-amber-500 hover:text-[var(--text-primary)] transition"
-                          >
-                            <span>🛠️</span>
-                            <span>Dispatch Maintenance</span>
-                          </button>
-                        )}
-
-                        {/* Mark as Resolved Button */}
+                      {/* Action: Mark as Resolved */}
+                      <div className="flex items-center gap-2">
                         {!alert.isResolved ? (
                           <button
                             type="button"
@@ -522,13 +435,13 @@ function AlertsContent() {
                               resolveAlert(alert.id);
                               showToast(`Alert #${alert.id.slice(-4)} marked as resolved.`);
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:border-emerald-500 hover:text-emerald-500 transition"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-[#20170a] hover:bg-amber-400 transition"
                           >
                             <span>✓</span>
                             <span>Mark as Resolved</span>
                           </button>
                         ) : (
-                          <span className="font-mono text-xs text-emerald-500/80">
+                          <span className="font-mono text-xs text-emerald-500">
                             Resolved
                           </span>
                         )}

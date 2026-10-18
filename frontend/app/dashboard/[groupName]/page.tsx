@@ -152,10 +152,10 @@ function LocationDetailContent() {
               ⚡
             </div>
             <h3 className="mt-4 text-sm font-semibold text-[var(--text-primary)]">
-              No AC MCB Sensors Connected
+              No Sensors Connected
             </h3>
             <p className="mt-1 text-xs text-[var(--text-muted)] max-w-sm mx-auto">
-              This physical location has no provisioned circuit nodes. Click below to initiate Bluetooth LE onboarding.
+              This group has no provisioned circuit sensors. Click below to add a device.
             </p>
             <button
               type="button"

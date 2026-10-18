@@ -35,7 +35,7 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
     if (!name) return;
-    createGroup(name, String(formData.get("description") ?? ""));
+    createGroup(name);
     onClose();
   }
 
@@ -48,37 +48,22 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
     >
       <form
         onSubmit={handleSubmit}
-        className="surface-card w-full max-w-md rounded-2xl border border-[var(--border)] p-5 shadow-2xl sm:p-6"
+        className="surface-card w-full max-w-sm rounded-2xl border border-[var(--border)] p-5 shadow-2xl sm:p-6"
       >
-        <p className="eyebrow">Location management</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight">Create new group / location</h2>
-        <label className="mt-5 block">
+        <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">Add Group</h2>
+        <label className="mt-4 block">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Group name
+            Group Name
           </span>
           <input
             id="group-name"
             name="name"
             autoFocus
             required
-            placeholder="e.g. West Wing AC Panel"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500"
+            placeholder="e.g. Server Room AC"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500"
           />
         </label>
-        <label className="mt-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Description <span className="text-[var(--text-muted)]">(optional)</span>
-          </span>
-          <input
-            id="group-description"
-            name="description"
-            placeholder="e.g. Split-system AC MCBs, level 2"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-amber-500"
-          />
-        </label>
-        <p className="mt-3 font-mono text-[10px] text-[var(--text-muted)]">
-          A unique 6-byte Mesh ID is generated automatically.
-        </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
@@ -90,9 +75,9 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
           <button
             id="create-group-submit"
             type="submit"
-            className="rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400 transition"
           >
-            Create group
+            Add Group
           </button>
         </div>
       </form>
@@ -122,11 +107,7 @@ export default function DashboardPage() {
     <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 md:mb-8">
         <div>
-          <p className="eyebrow mb-2">AC MCB circuits · All locations</p>
           <h1 className="text-xl font-semibold tracking-[-0.045em] sm:text-2xl">Global Overview</h1>
-          <p className="mt-1.5 text-xs text-[var(--text-muted)] sm:text-sm">
-            Live health of every monitored air-conditioning circuit.
-          </p>
         </div>
         <button
           id="create-group-button"
@@ -135,7 +116,7 @@ export default function DashboardPage() {
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
         >
           <span aria-hidden="true" className="text-base leading-none">+</span>
-          Create New Group / Location
+          Add Group
         </button>
       </div>
 
@@ -150,7 +131,7 @@ export default function DashboardPage() {
             <span className="ml-1.5 text-xs tracking-normal text-[var(--text-secondary)]">Offline</span>
           </p>
           <p className="mt-2 font-mono text-[10px] text-[var(--text-muted)]">
-            {devices.length} AC MCB sensors registered
+            {devices.length} sensors registered
           </p>
         </article>
 
@@ -215,16 +196,16 @@ export default function DashboardPage() {
         </article>
       </section>
 
-      <section className="mt-8 md:mt-10" aria-label="Locations">
+      <section className="mt-8 md:mt-10" aria-label="Groups">
         <div className="mb-4 flex items-center gap-2.5">
-          <h2 className="eyebrow">Locations / Groups</h2>
+          <h2 className="eyebrow">Groups</h2>
           <span className="rounded-md border border-[var(--border)] px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-muted)]">
             {pad(groups.length)}
           </span>
         </div>
         {groups.length === 0 ? (
           <div className="surface-card rounded-xl border border-[var(--border)] px-5 py-12 text-center text-sm text-[var(--text-muted)]">
-            No locations yet. Create a group to start onboarding AC MCB sensors.
+            No groups yet. Click &ldquo;+ Add Group&rdquo; to create one.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -237,21 +218,16 @@ export default function DashboardPage() {
                 <Link
                   key={group.id}
                   href={`/dashboard/${group.slug}`}
-                  className={`surface-card group flex min-h-[170px] flex-col rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 ${
+                  className={`surface-card group flex min-h-[150px] flex-col rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 ${
                     alertCount ? "border-red-500/30" : "border-[var(--border)]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-sm font-semibold tracking-[-0.02em]">{group.name}</h3>
                     <span className="shrink-0 rounded border border-[var(--border)] bg-[var(--canvas)] px-1.5 py-0.5 font-mono text-[9px] tracking-wider text-[var(--text-secondary)]">
-                      MESH {group.meshId}
+                      MESH {group.meshId.slice(0, 8)}
                     </span>
                   </div>
-                  {group.description && (
-                    <p className="mt-1.5 line-clamp-2 text-[11px] leading-4 text-[var(--text-muted)]">
-                      {group.description}
-                    </p>
-                  )}
                   <div className="mt-auto flex items-end justify-between border-t border-[var(--border)] pt-3">
                     <div>
                       <p className="eyebrow">Active sensors</p>

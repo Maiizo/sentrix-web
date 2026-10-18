@@ -72,11 +72,30 @@ export type TelemetryPoint = {
   isAnomaly: boolean;
 };
 
+export type UserProfile = {
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  role: string;
+  phone?: string;
+  department?: string;
+};
+
+export const DEFAULT_USER_PROFILE: UserProfile = {
+  name: "Alex Valdez",
+  email: "a.valdez@sentrix-facilities.com",
+  role: "System Administrator",
+  department: "Facility Operations & HVAC",
+  phone: "+1 (555) 234-8901",
+  avatarUrl: "",
+};
+
 type StoreState = {
   groups: Group[];
   devices: Device[];
   alerts: Alert[];
   teamMembers: TeamMember[];
+  userProfile: UserProfile;
 };
 
 // ---- External store (client-only; server snapshot is null) ----
@@ -236,6 +255,14 @@ function createSeed(): StoreState {
         invitedAt: iso(-2 * DAY),
       },
     ],
+    userProfile: {
+      name: "Alex Valdez",
+      email: "a.valdez@sentrix-facilities.com",
+      role: "System Administrator",
+      department: "Facility Operations & HVAC",
+      phone: "+1 (555) 234-8901",
+      avatarUrl: "",
+    },
   };
 }
 
@@ -247,11 +274,15 @@ function load(): StoreState {
       Array.isArray(saved?.devices) &&
       Array.isArray(saved?.alerts)
     ) {
+      const seed = createSeed();
       return {
         ...saved,
         teamMembers: Array.isArray(saved.teamMembers)
           ? saved.teamMembers
-          : createSeed().teamMembers,
+          : seed.teamMembers,
+        userProfile: saved.userProfile && typeof saved.userProfile === "object"
+          ? { ...seed.userProfile, ...saved.userProfile }
+          : seed.userProfile,
       } as StoreState;
     }
   } catch {
@@ -286,12 +317,6 @@ function update(updater: (current: StoreState) => StoreState) {
 
 // ---- Helpers ----
 
-function randomMeshId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
-    .join("")
-    .toUpperCase();
-}
 
 function slugify(name: string) {
   return (
@@ -305,18 +330,16 @@ function slugify(name: string) {
 function createGroup(name: string, description = ""): Group {
   const { groups } = getSnapshot();
 
-  let meshId = randomMeshId();
-  while (groups.some((g) => g.meshId === meshId)) meshId = randomMeshId();
-
   const base = slugify(name);
   let slug = base;
   for (let n = 2; groups.some((g) => g.slug === slug); n++) slug = `${base}-${n}`;
 
+  const id = crypto.randomUUID();
   const group: Group = {
-    id: crypto.randomUUID(),
+    id,
     name: name.trim(),
     slug,
-    meshId,
+    meshId: id,
     description: description.trim(),
   };
   update((s) => ({ ...s, groups: [...s.groups, group] }));
@@ -408,6 +431,28 @@ function inviteTeamMember(name: string, email: string, role: TeamRole = "USER"):
   return member;
 }
 
+function updateUserProfile(updates: Partial<UserProfile>): UserProfile {
+  let updatedProfile: UserProfile = DEFAULT_USER_PROFILE;
+  update((s) => {
+    updatedProfile = {
+      ...(s.userProfile ?? DEFAULT_USER_PROFILE),
+      ...updates,
+    };
+    return { ...s, userProfile: updatedProfile };
+  });
+  return updatedProfile;
+}
+
+function resetUserProfile(): UserProfile {
+  const defaultProfile = DEFAULT_USER_PROFILE;
+  update((s) => ({ ...s, userProfile: defaultProfile }));
+  return defaultProfile;
+}
+
+function clearUserAvatar(): UserProfile {
+  return updateUserProfile({ avatarUrl: "" });
+}
+
 function resetDemoData() {
   const seed = createSeed();
   state = seed;
@@ -495,6 +540,9 @@ type SentrixContextValue = StoreState & {
   inviteTeamMember: typeof inviteTeamMember;
   resetDemoData: typeof resetDemoData;
   getTelemetryWithBounds: typeof getTelemetryWithBounds;
+  updateUserProfile: typeof updateUserProfile;
+  resetUserProfile: typeof resetUserProfile;
+  clearUserAvatar: typeof clearUserAvatar;
 };
 
 const SentrixContext = createContext<SentrixContextValue | null>(null);
@@ -508,6 +556,7 @@ export function SentrixProvider({ children }: { children: ReactNode }) {
       devices: snapshot?.devices ?? [],
       alerts: snapshot?.alerts ?? [],
       teamMembers: snapshot?.teamMembers ?? [],
+      userProfile: snapshot?.userProfile ?? DEFAULT_USER_PROFILE,
       ready: snapshot !== null,
       createGroup,
       addDeviceToGroup,
@@ -518,6 +567,9 @@ export function SentrixProvider({ children }: { children: ReactNode }) {
       inviteTeamMember,
       resetDemoData,
       getTelemetryWithBounds,
+      updateUserProfile,
+      resetUserProfile,
+      clearUserAvatar,
     }),
     [snapshot],
   );

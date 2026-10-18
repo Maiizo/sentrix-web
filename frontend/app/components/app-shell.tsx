@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Brand } from "./brand";
+import { AccountSettingsModal } from "./account-settings-modal";
 import { useSentrix } from "../lib/sentrix-store";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
@@ -109,6 +110,8 @@ function NotificationsBell() {
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isDark, setIsDark] = useState(true);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const { userProfile } = useSentrix();
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -116,6 +119,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (!data.session) router.replace("/login");
     });
   }, [router]);
+
+  function getInitials(fullName: string) {
+    const parts = fullName.trim().split(/\s+/);
+    if (!parts[0]) return "U";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 
   return (
     <div
@@ -156,20 +166,49 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <NotificationsBell />
             <div className="hidden h-8 w-px bg-[var(--border)] sm:block" />
-            <div className="flex items-center gap-2.5" title="A. Valdez · System administrator">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-500 text-[10px] font-bold text-[#382315]">
-                AV
+
+            {/* Interactive User Account Trigger (Profile Picture & Name) */}
+            <button
+              type="button"
+              id="account-profile-trigger"
+              onClick={() => setShowAccountModal(true)}
+              className="group flex items-center gap-2.5 rounded-lg p-1 transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              title={`${userProfile.name} · Click for Account Settings`}
+              aria-label="Open Account Settings"
+            >
+              {userProfile.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={userProfile.avatarUrl}
+                  alt={userProfile.name}
+                  className="h-8 w-8 rounded-full object-cover border border-amber-500/40 group-hover:border-amber-500 transition"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-500 text-[10px] font-bold text-[#382315] group-hover:ring-2 group-hover:ring-amber-500/40 transition">
+                  {getInitials(userProfile.name)}
+                </div>
+              )}
+              <div className="hidden flex-col items-start text-left lg:flex">
+                <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-amber-500 transition">
+                  {userProfile.name}
+                </span>
+                <span className="font-mono text-[9px] text-[var(--text-muted)]">
+                  Account Settings ⚙
+                </span>
               </div>
-              <span className="hidden text-xs font-medium text-[var(--text-secondary)] lg:inline">
-                A. Valdez
-              </span>
-            </div>
+            </button>
           </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-[1600px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         {children}
       </main>
+
+      {/* Account Settings Modal with CRUD */}
+      <AccountSettingsModal
+        isOpen={showAccountModal}
+        onClose={() => setShowAccountModal(false)}
+      />
     </div>
   );
 }

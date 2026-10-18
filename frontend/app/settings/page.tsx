@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { AppShell } from "../components/app-shell";
 import {
   useSentrix,
@@ -172,32 +172,16 @@ function UserInviteModal({
 }
 
 function SettingsContent() {
-  const { ready, teamMembers, inviteTeamMember, resetDemoData } = useSentrix();
+  const { ready, teamMembers, inviteTeamMember, resetDemoData, userProfile, updateUserProfile } = useSentrix();
 
-  // Profile Form State with lazy localStorage initialization
-  const [fullName, setFullName] = useState(() => {
-    if (typeof window === "undefined") return "Alex Valdez";
-    try {
-      const saved = localStorage.getItem("sentrix-user-profile");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.name) return parsed.name;
-      }
-    } catch {}
-    return "Alex Valdez";
-  });
+  // Profile Form State synced with useSentrix store
+  const [fullName, setFullName] = useState(userProfile.name);
+  const [workEmail, setWorkEmail] = useState(userProfile.email);
 
-  const [workEmail, setWorkEmail] = useState(() => {
-    if (typeof window === "undefined") return "a.valdez@sentrix-facilities.com";
-    try {
-      const saved = localStorage.getItem("sentrix-user-profile");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.email) return parsed.email;
-      }
-    } catch {}
-    return "a.valdez@sentrix-facilities.com";
-  });
+  useEffect(() => {
+    setFullName(userProfile.name);
+    setWorkEmail(userProfile.email);
+  }, [userProfile.name, userProfile.email]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -223,10 +207,11 @@ function SettingsContent() {
 
   function handleSaveProfile(e: FormEvent) {
     e.preventDefault();
+    updateUserProfile({ name: fullName.trim(), email: workEmail.trim() });
     try {
       localStorage.setItem(
         "sentrix-user-profile",
-        JSON.stringify({ name: fullName, email: workEmail }),
+        JSON.stringify({ name: fullName.trim(), email: workEmail.trim() }),
       );
     } catch {}
     setProfileSaved(true);
@@ -556,7 +541,7 @@ function SettingsContent() {
                   Reset Demo Telemetry & Node State
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Restore original mock groups, commercial AC MCB units, and initial alert history.
+                  Restore original mock groups, AC circuit units, and initial alert history.
                 </p>
               </div>
 

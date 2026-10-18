@@ -113,7 +113,7 @@ function SensorAnalyticsContent() {
             <DynamicSensorStatusBadge device={device} />
           </div>
           <p className="mt-2 text-xs text-[var(--text-muted)] sm:text-sm">
-            Monitored AC branch breaker on <span className="text-[var(--text-secondary)] font-medium">{group.name}</span> (MESH {group.meshId}).
+            Monitored circuit on <span className="text-[var(--text-secondary)] font-medium">{group.name}</span>.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ function SensorAnalyticsContent() {
 
         {localAlerts.length === 0 ? (
           <div className="rounded-lg border border-[var(--border)] bg-[var(--canvas)] p-8 text-center text-xs text-[var(--text-muted)]">
-            No historical anomalies recorded for this MCB breaker. Circuit operating within baseline parameters.
+            No historical anomalies recorded. Circuit operating within baseline parameters.
           </div>
         ) : (
           <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--canvas)]">
@@ -200,15 +200,7 @@ function SensorAnalyticsContent() {
               <div key={alert.id} className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider ${
-                        alert.severity === "CRITICAL"
-                          ? "bg-red-500/15 text-red-500 border border-red-500/30"
-                          : "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                      }`}
-                    >
-                      {alert.severity}
-                    </span>
+                    <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                     <time className="font-mono text-[10px] text-[var(--text-muted)]">
                       {new Date(alert.timestamp).toLocaleString("en-GB", {
                         day: "2-digit",

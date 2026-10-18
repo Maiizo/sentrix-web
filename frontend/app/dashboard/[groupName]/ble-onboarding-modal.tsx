@@ -34,7 +34,6 @@ export function BleOnboardingModal({
   // Step 2 Form
   const [selectedMac, setSelectedMac] = useState("");
   const [sensorName, setSensorName] = useState("");
-  const [targetTempC, setTargetTempC] = useState<number>(22);
 
   // Step 3 Form (6-digit PIN)
   const [pinCode, setPinCode] = useState("715204");
@@ -170,7 +169,7 @@ export function BleOnboardingModal({
         name: sensorName.trim() || "MCB Panel AC-04",
         macAddress: selectedMac,
         pinCode,
-        targetTempC: Number(targetTempC) || 22,
+        targetTempC: 22,
       });
 
       setIsProvisioning(false);
@@ -258,10 +257,10 @@ export function BleOnboardingModal({
 
               <div>
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                  Scanning for Nearby Sentrix AC MCB Nodes
+                  Scanning for Nearby Sentrix Nodes
                 </h3>
                 <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-[var(--text-secondary)]">
-                  Bring your device within Bluetooth LE range of the commercial AC electrical panel.
+                  Bring your device within Bluetooth LE range of the AC unit or electrical panel.
                   Broadcasting GATT Service <code className="rounded bg-[var(--surface-hover)] px-1 py-0.5 font-mono text-[10px] text-amber-500">{SENTRIX_BLE_SERVICE_UUID.slice(0, 18)}…</code>
                 </p>
               </div>
@@ -365,7 +364,7 @@ export function BleOnboardingModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                     Sensor / Circuit Name
@@ -377,22 +376,6 @@ export function BleOnboardingModal({
                     onChange={(e) => setSensorName(e.target.value)}
                     placeholder="e.g. MCB Panel AC-04"
                     className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-amber-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-                    Target AC Setpoint (°C)
-                  </span>
-                  <input
-                    id="target-temp-input"
-                    required
-                    type="number"
-                    min={12}
-                    max={30}
-                    value={targetTempC}
-                    onChange={(e) => setTargetTempC(Number(e.target.value))}
-                    className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-amber-500"
                   />
                 </label>
               </div>
@@ -426,7 +409,7 @@ export function BleOnboardingModal({
                   Hardware Authentication PIN
                 </h3>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  Enter the 6-digit cryptographic PIN laser-etched on the Sentrix MCB hardware label.
+                  Enter the 6-digit cryptographic PIN printed on the Sentrix hardware label.
                 </p>
               </div>
 
@@ -517,32 +500,6 @@ export function BleOnboardingModal({
                   />
                 </label>
 
-                {/* Mesh Info & GATT JSON Payload Preview */}
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-3.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="eyebrow text-[9px]">Target Group Mesh ID</span>
-                    <span className="rounded bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-500">
-                      MESH {group.meshId}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="eyebrow text-[8px] text-[var(--text-muted)]">
-                      GATT JSON Payload Packet (to be written to NVS)
-                    </span>
-                    <pre className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] p-2.5 font-mono text-[10px] text-[var(--text-secondary)] overflow-x-auto">
-{JSON.stringify(
-  {
-    ssid: wifiSsid || "...",
-    password: wifiPassword ? "••••••••" : "...",
-    pin: pinCode,
-    mesh_id: group.meshId,
-  },
-  null,
-  2,
-)}
-                    </pre>
-                  </div>
-                </div>
               </div>
 
               <div className="flex justify-between pt-2">
@@ -590,8 +547,7 @@ export function BleOnboardingModal({
                   Sensor Connected & Baseline Calibration Started
                 </h3>
                 <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-[var(--text-muted)]">
-                  GATT JSON credentials were successfully committed to non-volatile flash. Node joined mesh{" "}
-                  <code className="text-amber-500 font-mono">MESH {group.meshId}</code>.
+                  GATT JSON credentials were successfully committed to non-volatile flash. Node joined the location group.
                 </p>
               </div>
 
@@ -603,10 +559,6 @@ export function BleOnboardingModal({
                 <div className="flex justify-between py-2.5">
                   <span className="text-[var(--text-muted)]">Hardware MAC</span>
                   <span className="font-mono text-[var(--text-primary)]">{selectedMac}</span>
-                </div>
-                <div className="flex justify-between py-2.5">
-                  <span className="text-[var(--text-muted)]">Target AC Setpoint</span>
-                  <span className="font-mono text-amber-500">{targetTempC}°C</span>
                 </div>
                 <div className="flex justify-between pt-2.5">
                   <span className="text-[var(--text-muted)]">Initial Status</span>
