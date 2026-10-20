@@ -19,12 +19,18 @@ export function BrandMark({ className = "" }: { className?: string }) {
   );
 }
 
-export function Brand({ compact = false }: { compact?: boolean }) {
+export function Brand({
+  compact = false,
+  href = "/",
+}: {
+  compact?: boolean;
+  href?: string;
+}) {
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5">
+    <Link href={href} className="inline-flex items-center gap-2.5">
       <BrandMark />
       {!compact && (
-        <span className="text-sm font-semibold tracking-[-0.03em] text-stone-100">
+        <span className="text-sm font-semibold tracking-[-0.03em] text-[var(--text-primary,#f5f5f4)]">
           Sentrix
         </span>
       )}

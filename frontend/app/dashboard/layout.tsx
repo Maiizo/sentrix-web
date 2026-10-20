@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AppShell } from "../components/app-shell";
 
 export const metadata: Metadata = {
   title: "Global Overview | Sentrix",
@@ -11,5 +12,5 @@ export default function DashboardLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  return children;
+  return <AppShell>{children}</AppShell>;
 }

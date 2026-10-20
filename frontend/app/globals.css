@@ -11,7 +11,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-.dashboard-shell[data-theme="dark"] {
+:root,
+[data-theme="dark"],
+.dark {
   color-scheme: dark;
   --canvas: #121311;
   --sidebar: #151613;
@@ -29,7 +31,8 @@
   --chart-alert: #ef4444;
 }
 
-.dashboard-shell[data-theme="light"] {
+[data-theme="light"],
+.light {
   color-scheme: light;
   --canvas: #f6f5f1;
   --sidebar: #fff;
