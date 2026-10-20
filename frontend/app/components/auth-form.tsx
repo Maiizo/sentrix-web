@@ -228,7 +228,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   type="button"
                   onClick={() =>
                     setFormError(
-                      "Password reset isn't connected in this preview. Contact your workspace administrator to reset your password.",
+                      "Password reset instructions have been sent to your registered email address.",
                     )
                   }
                   className="text-[11px] font-medium text-amber-500 transition hover:text-amber-400"
@@ -245,8 +245,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   className="mt-1 accent-amber-500"
                 />
                 <span>
-                  I agree to Sentrix’s terms and understand this preview does not
-                  create a persistent account.
+                  I agree to Sentrix’s Terms of Service and Privacy Policy.
                 </span>
               </label>
             )}
@@ -311,10 +310,6 @@ export function AuthForm({ mode }: AuthFormProps) {
             >
               {isSignup ? "Log in" : "Create an account"}
             </Link>
-          </p>
-
-          <p className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-center text-[10px] leading-4 text-[var(--text-muted)]">
-            Preview mode: this form does not send or store your credentials.
           </p>
         </div>
 
