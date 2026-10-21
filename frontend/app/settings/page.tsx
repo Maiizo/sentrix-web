@@ -9,13 +9,11 @@ import {
 
 type NotificationPreferences = {
   emailAlerts: boolean;
-  smsCritical: boolean;
   browserPush: boolean;
 };
 
 const DEFAULT_NOTIFICATIONS: NotificationPreferences = {
   emailAlerts: true,
-  smsCritical: true,
   browserPush: false,
 };
 
@@ -228,7 +226,7 @@ function SettingsContent() {
     setTimeout(() => setNotificationsSaved(false), 2500);
   }
 
-  function handleToggleSetting(key: "emailAlerts" | "smsCritical") {
+  function handleToggleSetting(key: "emailAlerts") {
     const updated = { ...notifications, [key]: !notifications[key] };
     setNotifications(updated);
     try {
@@ -250,7 +248,7 @@ function SettingsContent() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl space-y-8">
+      <div className="mx-auto max-w-4xl space-y-8">
         {/* Page Header */}
         <div>
           <h1 className="text-xl font-semibold tracking-[-0.045em] text-[var(--text-primary)] sm:text-2xl">
@@ -435,33 +433,6 @@ function SettingsContent() {
                 <span
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
                     notifications.emailAlerts ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* SMS Alerts Toggle */}
-            <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  SMS Alerts
-                </p>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  Instant SMS dispatch for critical alerts.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleToggleSetting("smsCritical")}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  notifications.smsCritical ? "bg-amber-500" : "bg-[var(--border)]"
-                }`}
-                role="switch"
-                aria-checked={notifications.smsCritical}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                    notifications.smsCritical ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
               </button>

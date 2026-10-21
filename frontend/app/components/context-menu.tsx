@@ -192,7 +192,6 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
     resolveAlert,
     dispatchMaintenance,
     simulateNewAnomaly,
-    resetDemoData,
   } = useSentrix();
   const confirm = useConfirm();
 
@@ -685,29 +684,6 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
             className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:text-amber-500 rounded-lg transition-colors cursor-pointer"
           >
             <span>Switch to {isDark ? "Light" : "Dark"} Theme</span>
-          </button>
-
-          <div className="my-1 border-t border-[var(--border)]" />
-
-          <button
-            type="button"
-            onClick={async () => {
-              closeMenu();
-              const ok = await confirm({
-                title: "Reset Demo Data",
-                message: "Are you sure you want to reset all telemetry and demo data back to default state?",
-                confirmText: "Reset Demo Data",
-                cancelText: "Cancel",
-                type: "warning",
-              });
-              if (ok) {
-                resetDemoData();
-                showToast("Demo data reset to factory state");
-              }
-            }}
-            className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-          >
-            <span>Reset Demo Data</span>
           </button>
         </div>
       </>
