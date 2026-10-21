@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { ConfirmProvider } from "./components/confirm-modal";
+
 export const metadata: Metadata = {
   title: "Sentrix",
   description: "Sentrix",
@@ -27,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-[var(--canvas)] text-[var(--text-primary)]">
         <ThemeProvider>
-          <SentrixProvider>{children}</SentrixProvider>
+          <SentrixProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </SentrixProvider>
         </ThemeProvider>
       </body>
     </html>

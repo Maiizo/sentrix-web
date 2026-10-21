@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useSentrix, type Device } from "../../lib/sentrix-store";
 import { BleOnboardingModal } from "./ble-onboarding-modal";
+import { useConfirm } from "../../components/confirm-modal";
 
 function getCalibrationDay(startedAt: string): number {
   const diffMs = Math.max(0, Date.now() - new Date(startedAt).getTime());
@@ -46,6 +47,7 @@ function LocationDetailContent() {
   const groupSlug = typeof params?.groupName === "string" ? params.groupName : "";
   const { ready, groups, devices, deleteGroup, deleteDevice } = useSentrix();
   const [showBleModal, setShowBleModal] = useState(false);
+  const confirm = useConfirm();
 
   if (!ready) {
     return (
@@ -118,8 +120,14 @@ function LocationDetailContent() {
           <button
             type="button"
             id="delete-group-button"
-            onClick={() => {
-              if (confirm(`Are you sure you want to delete the group "${group.name}" and all ${groupDevices.length} connected device(s)?`)) {
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Delete Group",
+                message: `Are you sure you want to delete the group "${group.name}" and all ${groupDevices.length} connected device(s)? This action cannot be undone.`,
+                confirmText: "Delete Group",
+                type: "danger",
+              });
+              if (ok) {
                 deleteGroup(group.id);
                 router.push("/dashboard");
               }
@@ -203,9 +211,15 @@ function LocationDetailContent() {
                       id={`delete-device-${device.id}`}
                       title={`Delete ${device.name}`}
                       aria-label={`Delete ${device.name}`}
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
+                        const ok = await confirm({
+                          title: "Delete Sensor",
+                          message: `Are you sure you want to delete "${device.name}" (${device.macAddress})? This action cannot be undone.`,
+                          confirmText: "Delete Sensor",
+                          type: "danger",
+                        });
+                        if (ok) {
                           deleteDevice(device.id);
                         }
                       }}

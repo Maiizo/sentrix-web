@@ -33,10 +33,7 @@ function AuthArtwork() {
           <br />
           <span className="text-[var(--text-muted)]">Waste less cooling energy.</span>
         </h2>
-        <p className="mt-4 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
-          One clear view of AC energy use, cooling health, and the alerts that
-          deserve your team’s attention.
-        </p>
+     
         <div className="mt-9 max-w-md rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
@@ -67,8 +64,7 @@ function AuthArtwork() {
         </div>
       </div>
       <div className="relative flex items-center justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
-        <span>Smarter cooling. Clear decisions.</span>
-        <span>01 — 03</span>
+        
       </div>
     </aside>
   );
@@ -154,18 +150,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           <div className="mb-7 lg:hidden">
             <BrandMark className="h-9 w-9 rounded-xl" />
           </div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-500">
-            {isSignup ? "Start with Sentrix" : "Welcome back"}
-          </p>
+         
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--text-primary)] sm:text-4xl">
             {isSignup ? "Create your account" : "Log in to Sentrix"}
           </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {isSignup
-              ? "Set up your workspace and bring your fleet into focus."
-              : "Your operation is right where you left it."}
-          </p>
-
+         
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             {isSignup && (
               <label className="block">
@@ -183,7 +172,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
             <label className="block">
               <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-                Work email
+                Email
               </span>
               <input
                 autoComplete="email"
@@ -314,8 +303,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div className="flex justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
-          <span>Sentrix · AC climate intelligence</span>
-          <span>Secure workspace</span>
+         
         </div>
       </section>
       <AuthArtwork />

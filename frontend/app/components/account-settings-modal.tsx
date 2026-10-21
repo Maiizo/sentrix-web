@@ -2,6 +2,7 @@
 
 import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { useSentrix } from "../lib/sentrix-store";
+import { useConfirm } from "./confirm-modal";
 
 const AVATAR_PRESETS = [
   { label: "Warm Gold", color: "from-amber-400 to-orange-500", textColor: "text-[#382315]" },
@@ -21,6 +22,7 @@ export function AccountSettingsModal({
   onLogout?: () => void;
 }) {
   const { userProfile, updateUserProfile, resetUserProfile, clearUserAvatar } = useSentrix();
+  const confirm = useConfirm();
 
   const [name, setName] = useState(userProfile.name);
   const [email, setEmail] = useState(userProfile.email);
@@ -29,7 +31,6 @@ export function AccountSettingsModal({
   const [phone, setPhone] = useState(userProfile.phone ?? "");
   const [avatarUrl, setAvatarUrl] = useState(userProfile.avatarUrl ?? "");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +48,13 @@ export function AccountSettingsModal({
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Image file size should be less than 2MB.");
+      confirm({
+        title: "File Too Large",
+        message: "Image file size should be less than 2MB. Please select a smaller photo.",
+        confirmText: "Understood",
+        cancelText: null,
+        type: "warning",
+      });
       return;
     }
 
@@ -94,7 +101,6 @@ export function AccountSettingsModal({
     setDepartment(defaultData.department ?? "");
     setPhone(defaultData.phone ?? "");
     setAvatarUrl(defaultData.avatarUrl ?? "");
-    setShowDeleteConfirm(false);
     notifySuccess("Account profile reset to default!");
   }
 
@@ -197,7 +203,18 @@ export function AccountSettingsModal({
                   {avatarUrl && (
                     <button
                       type="button"
-                      onClick={handleRemovePhoto}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Remove Profile Photo",
+                          message: "Are you sure you want to remove your profile photo and revert to your initials?",
+                          confirmText: "Remove Photo",
+                          cancelText: "Cancel",
+                          type: "danger",
+                        });
+                        if (ok) {
+                          handleRemovePhoto();
+                        }
+                      }}
                       className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
                     >
                       Remove Photo
@@ -227,7 +244,7 @@ export function AccountSettingsModal({
               </div>
 
               <div>
-                <label className="eyebrow mb-1.5 block">Work Email *</label>
+                <label className="eyebrow mb-1.5 block">Email *</label>
                 <input
                   type="email"
                   required
@@ -284,32 +301,24 @@ export function AccountSettingsModal({
                   Clear custom account modifications and revert credentials to factory defaults.
                 </p>
               </div>
-              {!showDeleteConfirm ? (
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition shrink-0"
-                >
-                  Reset Profile
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleResetToDefault}
-                    className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 transition"
-                  >
-                    Confirm Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface)]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Reset Account Profile",
+                    message: "Are you sure you want to revert your profile back to factory default? Your customizations will be cleared.",
+                    confirmText: "Reset Profile",
+                    cancelText: "Cancel",
+                    type: "danger",
+                  });
+                  if (ok) {
+                    handleResetToDefault();
+                  }
+                }}
+                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition shrink-0"
+              >
+                Reset Profile
+              </button>
             </div>
           </div>
         </div>

@@ -301,17 +301,6 @@ export function BleOnboardingModal({
                   Scan Any BLE Device
                 </button>
               </div>
-
-              {/* Troubleshooting Note */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-3 text-left">
-                <div className="flex items-center gap-2 font-mono text-[11px] font-semibold text-[var(--text-secondary)]">
-                  <span>ℹ️</span>
-                  <span>Why does Chrome say &ldquo;No compatible devices found&rdquo;?</span>
-                </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-muted)]">
-                  Web Bluetooth scans the room for physical microcontrollers (ESP32) actively broadcasting GATT Service UUID <code className="font-mono text-amber-500">{SENTRIX_BLE_SERVICE_UUID.slice(0, 13)}…</code> or advertising as <code className="font-mono text-amber-500">Sentrix-*</code>. If you are developing locally without a physical ESP32 powered on right next to your computer, click <strong className="text-amber-500">&ldquo;Simulate Discovered Sentrix Nodes&rdquo;</strong> to test the full 5-step onboarding flow.
-                </p>
-              </div>
             </div>
           )}
 
@@ -575,7 +564,7 @@ export function BleOnboardingModal({
                   onClick={onClose}
                   className="w-full rounded-lg bg-amber-500 py-2.5 text-xs font-semibold text-[#20170a] hover:bg-amber-400 transition shadow-sm shadow-amber-500/20"
                 >
-                  Done · View in Device Inventory →
+                  Done
                 </button>
               </div>
             </div>
