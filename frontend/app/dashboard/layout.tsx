@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { AppShell } from "../components/app-shell";
 
 export const metadata: Metadata = {
-  title: "Global Overview | Sentrix",
-  description: "AC energy use, unit health, and estimated climate impact.",
+  title: "Dashboard | Sentrix",
+  description: "Sentrix Dashboard",
 };
 
 export default function DashboardLayout({

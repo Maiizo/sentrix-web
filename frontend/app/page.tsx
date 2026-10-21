@@ -1038,7 +1038,7 @@ export default function Home() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[var(--border)] pt-6 font-mono text-xs uppercase tracking-wider text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
-            <span>Sentrix · Commercial AC Electrical Intelligence</span>
+            <span>Sentrix</span>
             <span>© 2026 Sentrix. All rights reserved.</span>
           </div>
         </div>

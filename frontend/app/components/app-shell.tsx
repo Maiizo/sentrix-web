@@ -123,6 +123,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     });
   }, [router]);
 
+  async function handleLogout() {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
+    try {
+      localStorage.removeItem("sentrix-demo-session");
+      sessionStorage.removeItem("sentrix-demo-session");
+    } catch {}
+    router.replace("/login");
+  }
+
   function getInitials(fullName: string) {
     const parts = fullName.trim().split(/\s+/);
     if (!parts[0]) return "U";
@@ -183,6 +194,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               </div>
             </button>
+
+            {/* Header Logout Button */}
+            <button
+              type="button"
+              id="header-logout-button"
+              onClick={handleLogout}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
+              title="Log Out"
+              aria-label="Log Out"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </header>
@@ -194,6 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AccountSettingsModal
         isOpen={showAccountModal}
         onClose={() => setShowAccountModal(false)}
+        onLogout={handleLogout}
       />
 
       {/* Context-aware Right-Click Menu */}

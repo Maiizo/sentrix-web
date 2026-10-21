@@ -15,9 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sentrix | AC climate intelligence",
-  description:
-    "AC-first energy monitoring to help buildings improve cooling efficiency and reduce emissions.",
+  title: "Sentrix",
+  description: "Sentrix",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -50,7 +50,7 @@ function LocationDetailContent() {
   if (!ready) {
     return (
       <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-        Loading location mesh…
+        Loading…
       </p>
     );
   }
@@ -111,11 +111,6 @@ function LocationDetailContent() {
               {isMeshHealthy ? "Online" : "Awaiting Devices"}
             </span>
           </div>
-          {group.description && (
-            <p className="mt-2 text-xs text-[var(--text-muted)] sm:text-sm max-w-2xl leading-relaxed">
-              {group.description}
-            </p>
-          )}
         </div>
 
         {/* Primary CTAs */}
@@ -148,11 +143,11 @@ function LocationDetailContent() {
         </div>
       </div>
 
-      {/* Device Inventory Table Section */}
-      <section aria-label="Device Inventory" className="space-y-4">
+      {/* Sensors Card Grid Section */}
+      <section aria-label="Sensors" className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <h2 className="eyebrow">Device Inventory</h2>
+            <h2 className="eyebrow">Sensors</h2>
             <span className="rounded-md border border-[var(--border)] px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-muted)]">
               {groupDevices.length.toString().padStart(2, "0")} SENSORS
             </span>
@@ -176,88 +171,71 @@ function LocationDetailContent() {
             </button>
           </div>
         ) : (
-          <div className="surface-card overflow-hidden rounded-xl border border-[var(--border)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[var(--border)] bg-[var(--surface-hover)] text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
-                  <tr>
-                    <th scope="col" className="px-5 py-3 font-medium">Sensor Name</th>
-                    <th scope="col" className="px-5 py-3 font-medium">MAC Address</th>
-                    <th scope="col" className="px-5 py-3 font-medium">Current Status</th>
-                    <th scope="col" className="px-5 py-3 font-medium text-right">Live RMS Current</th>
-                    <th scope="col" className="px-5 py-3 font-medium text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)] font-normal text-[var(--text-secondary)]">
-                  {groupDevices.map((device) => (
-                    <tr
-                      key={device.id}
-                      data-context-type="device"
-                      data-context-id={device.id}
-                      className="transition hover:bg-[var(--surface-hover)]"
-                    >
-                      {/* 1. Sensor Name */}
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-[var(--text-primary)]">{device.name}</p>
-                      </td>
-
-                      {/* 2. MAC Address */}
-                      <td className="px-5 py-4 font-mono text-[11px] text-[var(--text-muted)]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {groupDevices.map((device) => (
+              <div
+                key={device.id}
+                role="button"
+                tabIndex={0}
+                data-context-type="device"
+                data-context-id={device.id}
+                onClick={() => router.push(`/dashboard/${group.slug}/${device.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/dashboard/${group.slug}/${device.id}`);
+                  }
+                }}
+                className="surface-card group relative flex flex-col justify-between rounded-xl border border-[var(--border)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/50 hover:shadow-lg cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-amber-500 transition line-clamp-1">
+                        {device.name}
+                      </h3>
+                      <p className="font-mono text-[11px] text-[var(--text-muted)]">
                         {device.macAddress}
-                      </td>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id={`delete-device-${device.id}`}
+                      title={`Delete ${device.name}`}
+                      aria-label={`Delete ${device.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
+                          deleteDevice(device.id);
+                        }
+                      }}
+                      className="rounded p-1 text-[var(--text-muted)] opacity-60 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
 
-                      {/* 3. Current Status */}
-                      <td className="px-5 py-4">
-                        <StatusBadge device={device} />
-                      </td>
-
-                      {/* 4. Live RMS Current (Amps) */}
-                      <td className="px-5 py-4 text-right font-mono text-sm font-semibold text-[var(--text-primary)]">
+                  <div className="mt-5 flex items-end justify-between border-t border-[var(--border)] pt-4">
+                    <StatusBadge device={device} />
+                    <div className="text-right">
+                      <span className="eyebrow block">Live RMS</span>
+                      <span className="font-mono text-base font-semibold text-[var(--text-primary)]">
                         {device.liveRmsAmps > 0 ? (
                           <>
                             {device.liveRmsAmps.toFixed(2)}
                             <span className="ml-1 text-xs text-[var(--text-muted)] font-normal">A</span>
                           </>
                         ) : (
-                          <span className="text-[var(--text-muted)] font-normal">0.00 A</span>
+                          <span className="text-[var(--text-muted)] font-normal text-xs">0.00 A</span>
                         )}
-                      </td>
-
-                      {/* 5. View Analytics & Delete Action */}
-                      <td className="px-5 py-4 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            id={`view-analytics-${device.id}`}
-                            href={`/dashboard/${group.slug}/${device.id}`}
-                            className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:border-amber-500/50 hover:bg-[var(--surface-hover)] transition"
-                          >
-                            <span>View Analytics</span>
-                            <span aria-hidden="true">→</span>
-                          </Link>
-                          <button
-                            type="button"
-                            id={`delete-device-${device.id}`}
-                            title={`Delete ${device.name}`}
-                            aria-label={`Delete ${device.name}`}
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
-                                deleteDevice(device.id);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
-                          >
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            </svg>
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>

@@ -14,9 +14,11 @@ const AVATAR_PRESETS = [
 export function AccountSettingsModal({
   isOpen,
   onClose,
+  onLogout,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => void;
 }) {
   const { userProfile, updateUserProfile, resetUserProfile, clearUserAvatar } = useSentrix();
 
@@ -314,13 +316,28 @@ export function AccountSettingsModal({
 
         {/* Modal Footer */}
         <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface)] px-6 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition"
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition"
+            >
+              Cancel
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                id="modal-logout-button"
+                onClick={() => {
+                  onClose();
+                  onLogout();
+                }}
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
+              >
+                Log Out
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             form="account-settings-form"

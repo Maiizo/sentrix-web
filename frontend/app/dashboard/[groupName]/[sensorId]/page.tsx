@@ -54,7 +54,7 @@ function SensorAnalyticsContent() {
   if (!ready) {
     return (
       <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-        Loading sensor analytics…
+        Loading…
       </p>
     );
   }
@@ -285,7 +285,7 @@ export default function SensorDetailPage() {
     <Suspense
       fallback={
         <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-          Loading sensor analytics…
+          Loading…
         </p>
       }
     >

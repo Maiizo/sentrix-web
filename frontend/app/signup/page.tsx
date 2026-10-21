@@ -3,7 +3,7 @@ import { AuthForm } from "../components/auth-form";
 
 export const metadata: Metadata = {
   title: "Create an account | Sentrix",
-  description: "Create your Sentrix AC energy and climate monitoring workspace.",
+  description: "Create your Sentrix account.",
 };
 
 export default function SignupPage() {

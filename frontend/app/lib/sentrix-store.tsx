@@ -3,12 +3,14 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { isSupabaseConfigured, supabase } from "./supabase-browser";
 
-// ---- Schema-aligned types (Prisma: Group, Device, Alert) ----
+// ---- Schema-aligned types (Prisma/Supabase: Group, Device, Alert) ----
 
 export type Group = {
   id: string;
@@ -82,11 +84,11 @@ export type UserProfile = {
 };
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  name: "Alex Valdez",
-  email: "a.valdez@sentrix-facilities.com",
-  role: "System Administrator",
-  department: "Facility Operations & HVAC",
-  phone: "+1 (555) 234-8901",
+  name: "User",
+  email: "",
+  role: "Operator",
+  department: "",
+  phone: "",
   avatarUrl: "",
 };
 
@@ -100,38 +102,71 @@ type StoreState = {
 
 // ---- External store (client-only; server snapshot is null) ----
 
-const STORAGE_KEY = "sentrix-store-v1";
+const STORAGE_KEY = "sentrix-store-v2";
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 let state: StoreState | null = null;
 const listeners = new Set<() => void>();
 
-function createSeed(): StoreState {
+function isDemoSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const demo =
+      localStorage.getItem("sentrix-demo-session") ||
+      sessionStorage.getItem("sentrix-demo-session");
+    if (demo === "active") return true;
+
+    // Check supabase auth token in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("sb-") && key.endsWith("-auth-token")) {
+        const raw = localStorage.getItem(key);
+        if (raw && raw.toLowerCase().includes("demo")) return true;
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return false;
+}
+
+function createEmptyState(): StoreState {
+  return {
+    groups: [],
+    devices: [],
+    alerts: [],
+    teamMembers: [],
+    userProfile: DEFAULT_USER_PROFILE,
+  };
+}
+
+/** Demo Seed used ONLY when logging in with a DEMO account */
+function createDemoSeed(): StoreState {
   const now = Date.now();
   const iso = (offsetMs: number) => new Date(now + offsetMs).toISOString();
 
   return {
     groups: [
       {
-        id: "grp-main-server-room",
+        id: "11111111-1111-1111-1111-111111111111",
         name: "Main Server Room",
         slug: "main-server-room",
         meshId: "A1B2C3D4E5F6",
-        description: "Precision AC circuits cooling the core server racks.",
+        description: "",
       },
       {
-        id: "grp-east-wing-ac-panel",
+        id: "22222222-2222-2222-2222-222222222222",
         name: "East Wing AC Panel",
         slug: "east-wing-ac-panel",
         meshId: "F6E5D4C3B2A1",
-        description: "Split-system AC MCBs serving east wing offices.",
+        description: "",
       },
     ],
     devices: [
       {
-        id: "dev-crac-01",
-        groupId: "grp-main-server-room",
+        id: "aaaaaaaa-1111-1111-1111-111111111111",
+        groupId: "11111111-1111-1111-1111-111111111111",
         name: "CRAC Unit 01 · MCB",
         macAddress: "24:6F:28:A1:3C:01",
         pinCode: "482913",
@@ -142,9 +177,8 @@ function createSeed(): StoreState {
         liveRmsAmps: 14.2,
       },
       {
-        // Day 2 of 7 in its calibration window.
-        id: "dev-crac-02",
-        groupId: "grp-main-server-room",
+        id: "aaaaaaaa-2222-2222-2222-222222222222",
+        groupId: "11111111-1111-1111-1111-111111111111",
         name: "CRAC Unit 02 · MCB",
         macAddress: "24:6F:28:A1:3C:02",
         pinCode: "715204",
@@ -155,8 +189,8 @@ function createSeed(): StoreState {
         liveRmsAmps: 12.8,
       },
       {
-        id: "dev-split-3f",
-        groupId: "grp-east-wing-ac-panel",
+        id: "bbbbbbbb-1111-1111-1111-111111111111",
+        groupId: "22222222-2222-2222-2222-222222222222",
         name: "Split AC 3F-East · MCB",
         macAddress: "24:6F:28:B7:91:0A",
         pinCode: "390671",
@@ -167,8 +201,8 @@ function createSeed(): StoreState {
         liveRmsAmps: 9.6,
       },
       {
-        id: "dev-split-4f",
-        groupId: "grp-east-wing-ac-panel",
+        id: "bbbbbbbb-2222-2222-2222-222222222222",
+        groupId: "22222222-2222-2222-2222-222222222222",
         name: "Split AC 4F-East · MCB",
         macAddress: "24:6F:28:B7:91:0B",
         pinCode: "604158",
@@ -182,8 +216,8 @@ function createSeed(): StoreState {
     alerts: [
       {
         id: "alt-001",
-        deviceId: "dev-crac-01",
-        groupId: "grp-main-server-room",
+        deviceId: "aaaaaaaa-1111-1111-1111-111111111111",
+        groupId: "11111111-1111-1111-1111-111111111111",
         timestamp: iso(-2 * HOUR),
         actualValue: 21.4,
         expectedMax: 16.5,
@@ -194,8 +228,8 @@ function createSeed(): StoreState {
       },
       {
         id: "alt-002",
-        deviceId: "dev-split-3f",
-        groupId: "grp-east-wing-ac-panel",
+        deviceId: "bbbbbbbb-1111-1111-1111-111111111111",
+        groupId: "22222222-2222-2222-2222-222222222222",
         timestamp: iso(-9 * HOUR),
         actualValue: 12.1,
         expectedMax: 11,
@@ -206,8 +240,8 @@ function createSeed(): StoreState {
       },
       {
         id: "alt-003",
-        deviceId: "dev-split-3f",
-        groupId: "grp-east-wing-ac-panel",
+        deviceId: "bbbbbbbb-1111-1111-1111-111111111111",
+        groupId: "22222222-2222-2222-2222-222222222222",
         timestamp: iso(-3 * DAY),
         actualValue: 5.9,
         expectedMax: 11,
@@ -216,51 +250,14 @@ function createSeed(): StoreState {
         isResolved: true,
         userFeedback: true,
       },
-      {
-        id: "alt-004",
-        deviceId: "dev-crac-01",
-        groupId: "grp-main-server-room",
-        timestamp: iso(-10 * DAY),
-        actualValue: 18.3,
-        expectedMax: 16.5,
-        expectedMin: 11.8,
-        severity: "WARNING",
-        isResolved: true,
-        userFeedback: false,
-      },
     ],
-    teamMembers: [
-      {
-        id: "usr-01",
-        name: "Alex Valdez",
-        email: "a.valdez@sentrix-facilities.com",
-        role: "ADMIN",
-        status: "ACTIVE",
-        invitedAt: iso(-60 * DAY),
-      },
-      {
-        id: "usr-02",
-        name: "Marcus Vance",
-        email: "m.vance@sentrix-facilities.com",
-        role: "USER",
-        status: "ACTIVE",
-        invitedAt: iso(-14 * DAY),
-      },
-      {
-        id: "usr-03",
-        name: "Elena Rostova",
-        email: "e.rostova@cooling-contractors.com",
-        role: "USER",
-        status: "PENDING",
-        invitedAt: iso(-2 * DAY),
-      },
-    ],
+    teamMembers: [],
     userProfile: {
-      name: "Alex Valdez",
-      email: "a.valdez@sentrix-facilities.com",
+      name: "Demo Administrator",
+      email: "demo@sentrix.my.id",
       role: "System Administrator",
-      department: "Facility Operations & HVAC",
-      phone: "+1 (555) 234-8901",
+      department: "Facility Operations",
+      phone: "",
       avatarUrl: "",
     },
   };
@@ -274,23 +271,18 @@ function load(): StoreState {
       Array.isArray(saved?.devices) &&
       Array.isArray(saved?.alerts)
     ) {
-      const seed = createSeed();
-      return {
-        ...saved,
-        teamMembers: Array.isArray(saved.teamMembers)
-          ? saved.teamMembers
-          : seed.teamMembers,
-        userProfile: saved.userProfile && typeof saved.userProfile === "object"
-          ? { ...seed.userProfile, ...saved.userProfile }
-          : seed.userProfile,
-      } as StoreState;
+      return saved as StoreState;
     }
   } catch {
-    // Corrupt storage: fall through to a fresh seed.
+    // Fall through to default
   }
-  const seed = createSeed();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-  return seed;
+
+  // If demo account session, load demo seed; otherwise load empty database state!
+  const initial = isDemoSession() ? createDemoSeed() : createEmptyState();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+  } catch {}
+  return initial;
 }
 
 function getSnapshot(): StoreState {
@@ -311,12 +303,13 @@ function subscribe(listener: () => void) {
 
 function update(updater: (current: StoreState) => StoreState) {
   state = updater(getSnapshot());
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
   listeners.forEach((listener) => listener());
 }
 
 // ---- Helpers ----
-
 
 function slugify(name: string) {
   return (
@@ -327,6 +320,104 @@ function slugify(name: string) {
   );
 }
 
+function generateMeshId(): string {
+  return Array.from({ length: 12 }, () =>
+    Math.floor(Math.random() * 16).toString(16).toUpperCase(),
+  ).join("");
+}
+
+export async function syncFromSupabase() {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const email = session.user.email?.toLowerCase() || "";
+    const isDemo = email.includes("demo");
+
+    // Fetch database tables
+    const [groupsRes, devicesRes, alertsRes, userRes] = await Promise.all([
+      supabase.from("groups").select("*"),
+      supabase.from("devices").select("*"),
+      supabase.from("alerts").select("*"),
+      supabase.from("users").select("*").eq("id", session.user.id).maybeSingle(),
+    ]);
+
+    const groupsData = groupsRes.data ?? [];
+    const devicesData = devicesRes.data ?? [];
+    const alertsData = alertsRes.data ?? [];
+    const userData = userRes.data;
+
+    // If demo account and database has no rows yet, provide demo seed for demo account
+    if (isDemo && groupsData.length === 0) {
+      const demoSeed = createDemoSeed();
+      update(() => demoSeed);
+      return;
+    }
+
+    // Map from real database tables
+    const mappedGroups: Group[] = groupsData.map((g: { id: string; name: string; mesh_id?: string; description?: string }) => ({
+      id: g.id,
+      name: g.name,
+      slug: slugify(g.name),
+      meshId: g.mesh_id || "",
+      description: g.description || "",
+    }));
+
+    const mappedDevices: Device[] = devicesData.map((d: { id: string; group_id: string; name?: string; mac_address: string; pin_code: string; status?: string; calibration_started_at?: string; calibration_ends_at?: string }) => ({
+      id: d.id,
+      groupId: d.group_id,
+      name: d.name || `Sensor ${d.mac_address}`,
+      macAddress: d.mac_address,
+      pinCode: d.pin_code,
+      status: (d.status || "ACTIVE") as DeviceStatus,
+      targetTempC: 22,
+      calibrationStartedAt: d.calibration_started_at || new Date().toISOString(),
+      calibrationEndsAt: d.calibration_ends_at || new Date().toISOString(),
+      liveRmsAmps: 0,
+    }));
+
+    const mappedAlerts: Alert[] = alertsData.map((a: { id: string; device_id: string; timestamp: string; actual_value: number; expected_max: number; expected_min: number; severity: string; is_resolved: boolean; user_feedback: boolean | null }) => ({
+      id: a.id,
+      deviceId: a.device_id,
+      groupId: mappedDevices.find((d) => d.id === a.device_id)?.groupId || "",
+      timestamp: a.timestamp,
+      actualValue: a.actual_value,
+      expectedMax: a.expected_max,
+      expectedMin: a.expected_min,
+      severity: (a.severity || "WARNING") as AlertSeverity,
+      isResolved: a.is_resolved,
+      userFeedback: a.user_feedback,
+      dispatchedAt: null,
+    }));
+
+    const profile: UserProfile = {
+      name:
+        userData?.name ||
+        session.user.user_metadata?.full_name ||
+        session.user.email?.split("@")[0] ||
+        "User",
+      email: session.user.email || "",
+      role: userData?.role === "ADMIN" ? "System Administrator" : "Operator",
+      department: "",
+      phone: "",
+      avatarUrl: "",
+    };
+
+    update(() => ({
+      groups: mappedGroups,
+      devices: mappedDevices,
+      alerts: mappedAlerts,
+      teamMembers: [],
+      userProfile: profile,
+    }));
+  } catch (err) {
+    console.error("Failed to sync from database:", err);
+  }
+}
+
 function createGroup(name: string, description = ""): Group {
   const { groups } = getSnapshot();
 
@@ -335,14 +426,34 @@ function createGroup(name: string, description = ""): Group {
   for (let n = 2; groups.some((g) => g.slug === slug); n++) slug = `${base}-${n}`;
 
   const id = crypto.randomUUID();
+  const meshId = generateMeshId();
   const group: Group = {
     id,
     name: name.trim(),
     slug,
-    meshId: id,
+    meshId,
     description: description.trim(),
   };
   update((s) => ({ ...s, groups: [...s.groups, group] }));
+
+  const client = supabase;
+  if (isSupabaseConfigured && client) {
+    client.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        client
+          .from("groups")
+          .insert({
+            id: group.id,
+            user_id: session.user.id,
+            name: group.name,
+            mesh_id: meshId,
+            description: group.description,
+          })
+          .then(() => {});
+      }
+    });
+  }
+
   return group;
 }
 
@@ -361,12 +472,32 @@ function addDeviceToGroup(
     liveRmsAmps: 0,
   };
   update((s) => ({ ...s, devices: [...s.devices, device] }));
+
+  if (isSupabaseConfigured && supabase) {
+    const cleanMac = payload.macAddress.replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+    const cleanPin = payload.pinCode.replace(/[^0-9]/g, "");
+    if (cleanMac.length === 12 && cleanPin.length === 6) {
+      supabase
+        .from("devices")
+        .insert({
+          id: device.id,
+          group_id: groupId,
+          name: payload.name,
+          mac_address: cleanMac,
+          pin_code: cleanPin,
+          status: "CALIBRATING",
+          calibration_started_at: device.calibrationStartedAt,
+          calibration_ends_at: device.calibrationEndsAt,
+        })
+        .then(() => {});
+    }
+  }
+
   return device;
 }
 
 function deleteGroup(groupId: string) {
   update((s) => {
-    // Find all devices in this group to also cascade delete alerts associated with them
     const groupDeviceIds = new Set(s.devices.filter((d) => d.groupId === groupId).map((d) => d.id));
     return {
       ...s,
@@ -375,6 +506,10 @@ function deleteGroup(groupId: string) {
       alerts: s.alerts.filter((a) => a.groupId !== groupId && !groupDeviceIds.has(a.deviceId)),
     };
   });
+
+  if (isSupabaseConfigured && supabase) {
+    supabase.from("groups").delete().eq("id", groupId).then(() => {});
+  }
 }
 
 function deleteDevice(deviceId: string) {
@@ -383,6 +518,10 @@ function deleteDevice(deviceId: string) {
     devices: s.devices.filter((d) => d.id !== deviceId),
     alerts: s.alerts.filter((a) => a.deviceId !== deviceId),
   }));
+
+  if (isSupabaseConfigured && supabase) {
+    supabase.from("devices").delete().eq("id", deviceId).then(() => {});
+  }
 }
 
 function patchAlert(alertId: string, patch: Partial<Alert>) {
@@ -394,10 +533,16 @@ function patchAlert(alertId: string, patch: Partial<Alert>) {
 
 function submitAlertFeedback(alertId: string, feedback: boolean) {
   patchAlert(alertId, { userFeedback: feedback });
+  if (isSupabaseConfigured && supabase) {
+    supabase.from("alerts").update({ user_feedback: feedback }).eq("id", alertId).then(() => {});
+  }
 }
 
 function resolveAlert(alertId: string) {
   patchAlert(alertId, { isResolved: true });
+  if (isSupabaseConfigured && supabase) {
+    supabase.from("alerts").update({ is_resolved: true }).eq("id", alertId).then(() => {});
+  }
 }
 
 function dispatchMaintenance(alertId: string) {
@@ -425,17 +570,6 @@ function simulateNewAnomaly(): Alert {
   };
 
   update((s) => ({ ...s, alerts: [alert, ...s.alerts] }));
-
-  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-    try {
-      new Notification("Sentrix Alert: Critical AC MCB Anomaly", {
-        body: `${targetDevice?.name ?? "AC Circuit"} spiked to 24.8A (exceeded 16.5A bound).`,
-      });
-    } catch {
-      // Browser notification failed or blocked
-    }
-  }
-
   return alert;
 }
 
@@ -461,6 +595,16 @@ function updateUserProfile(updates: Partial<UserProfile>): UserProfile {
     };
     return { ...s, userProfile: updatedProfile };
   });
+
+  const client = supabase;
+  if (isSupabaseConfigured && client && updates.name) {
+    client.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        client.from("users").update({ name: updates.name }).eq("id", session.user.id).then(() => {});
+      }
+    });
+  }
+
   return updatedProfile;
 }
 
@@ -475,7 +619,7 @@ function clearUserAvatar(): UserProfile {
 }
 
 function resetDemoData() {
-  const seed = createSeed();
+  const seed = createDemoSeed();
   state = seed;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
@@ -515,13 +659,11 @@ function getTelemetryWithBounds(deviceId: string, range: TelemetryRange): Teleme
   return Array.from({ length: points }, (_, i) => {
     const time = new Date(start + i * stepMs);
     const hour = time.getHours() + time.getMinutes() / 60;
-    // AC load peaks mid-afternoon and dips before dawn.
     const predicted = nominalAmps * (0.85 + 0.2 * Math.sin(((hour - 9) / 24) * 2 * Math.PI));
     let upperBound = predicted * 1.12;
     let lowerBound = predicted * 0.88;
     let rmsCurrent = predicted * (1 + (random() - 0.5) * 0.12);
 
-    // Pin recorded alerts onto the nearest sample so the chart matches the Alert table.
     const alert = deviceAlerts.find(
       (a) => Math.abs(new Date(a.timestamp).getTime() - time.getTime()) < stepMs / 2,
     );
@@ -550,7 +692,6 @@ function getTelemetryWithBounds(deviceId: string, range: TelemetryRange): Teleme
 // ---- Context ----
 
 type SentrixContextValue = StoreState & {
-  /** False during server prerender and hydration; true once localStorage is loaded. */
   ready: boolean;
   createGroup: typeof createGroup;
   deleteGroup: typeof deleteGroup;
@@ -572,6 +713,20 @@ const SentrixContext = createContext<SentrixContextValue | null>(null);
 
 export function SentrixProvider({ children }: { children: ReactNode }) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  useEffect(() => {
+    syncFromSupabase();
+    if (isSupabaseConfigured && supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(() => {
+        syncFromSupabase();
+      });
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, []);
 
   const value = useMemo<SentrixContextValue>(
     () => ({
