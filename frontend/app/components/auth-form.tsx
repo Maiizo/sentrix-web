@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Brand, BrandMark } from "./brand";
-import { ThemeToggle } from "./theme-toggle";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 type AuthFormProps = {
@@ -135,15 +134,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between">
           <Brand />
-          <div className="flex items-center gap-3">
-            <ThemeToggle showLabel={false} />
-            <Link
-              href="/"
-              className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
-            >
-              Back to home
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+          >
+            Back to home
+          </Link>
         </div>
 
         <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col justify-center py-12">
