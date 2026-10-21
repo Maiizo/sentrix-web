@@ -53,7 +53,7 @@ function UserInviteModal({
       }}
     >
       <div className="surface-card w-full max-w-md overflow-hidden rounded-2xl border border-[var(--border)] shadow-2xl animate-in fade-in zoom-in-95">
-        <div className="border-b border-[var(--border)] bg-[var(--surface-hover)] px-6 py-4">
+        <div className="border-b border-[var(--border)] bg-[var(--surface)] px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               Invite Facility Supervisor

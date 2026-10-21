@@ -21,7 +21,7 @@ export function AccountSettingsModal({
   onClose: () => void;
   onLogout?: () => void;
 }) {
-  const { userProfile, updateUserProfile, resetUserProfile, clearUserAvatar } = useSentrix();
+  const { userProfile, updateUserProfile, clearUserAvatar } = useSentrix();
   const confirm = useConfirm();
 
   const [name, setName] = useState(userProfile.name);
@@ -92,17 +92,6 @@ export function AccountSettingsModal({
     notifySuccess("Account profile updated successfully!");
   }
 
-  // DELETE / RESET
-  function handleResetToDefault() {
-    const defaultData = resetUserProfile();
-    setName(defaultData.name);
-    setEmail(defaultData.email);
-    setRole(defaultData.role);
-    setDepartment(defaultData.department ?? "");
-    setPhone(defaultData.phone ?? "");
-    setAvatarUrl(defaultData.avatarUrl ?? "");
-    notifySuccess("Account profile reset to default!");
-  }
 
   // DELETE PHOTO
   function handleRemovePhoto() {
@@ -121,7 +110,7 @@ export function AccountSettingsModal({
     >
       <div className="surface-card relative w-full max-w-xl rounded-2xl border border-[var(--border)] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface-hover)] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 font-semibold">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -157,7 +146,7 @@ export function AccountSettingsModal({
           )}
 
           {/* Profile Picture Section (READ / UPDATE / DELETE photo) */}
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <h3 className="eyebrow mb-3">Profile Picture & Avatar</h3>
             <div className="flex flex-col sm:flex-row items-center gap-5">
               <div className="relative group">
@@ -291,36 +280,6 @@ export function AccountSettingsModal({
               />
             </div>
           </form>
-
-          {/* Danger / Reset Zone (DELETE / RESET custom account data) */}
-          <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold text-red-500">Reset Account Profile</p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                  Clear custom account modifications and revert credentials to factory defaults.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: "Reset Account Profile",
-                    message: "Are you sure you want to revert your profile back to factory default? Your customizations will be cleared.",
-                    confirmText: "Reset Profile",
-                    cancelText: "Cancel",
-                    type: "danger",
-                  });
-                  if (ok) {
-                    handleResetToDefault();
-                  }
-                }}
-                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition shrink-0"
-              >
-                Reset Profile
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Modal Footer */}
