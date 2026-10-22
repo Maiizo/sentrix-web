@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useSentrix, type Device } from "../../lib/sentrix-store";
+import { scanSentrixHardware, type ScanResult } from "../../lib/sentrix-bluetooth";
 import { BleOnboardingModal } from "./ble-onboarding-modal";
 
 function getCalibrationDay(startedAt: string): number {
@@ -46,6 +47,11 @@ function LocationDetailContent() {
   const groupSlug = typeof params?.groupName === "string" ? params.groupName : "";
   const { ready, groups, devices, deleteGroup, deleteDevice } = useSentrix();
   const [showBleModal, setShowBleModal] = useState(false);
+  const [bleScan, setBleScan] = useState<Promise<ScanResult>>();
+  function openBleModal() {
+    setBleScan(scanSentrixHardware());
+    setShowBleModal(true);
+  }
 
   if (!ready) {
     return (
@@ -139,7 +145,7 @@ function LocationDetailContent() {
           <button
             type="button"
             id="add-device-to-group-button"
-            onClick={() => setShowBleModal(true)}
+            onClick={openBleModal}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
           >
             <span aria-hidden="true" className="text-base font-bold leading-none">+</span>
@@ -169,7 +175,7 @@ function LocationDetailContent() {
             </h3>
             <button
               type="button"
-              onClick={() => setShowBleModal(true)}
+              onClick={openBleModal}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400"
             >
               + Add First Device
@@ -264,7 +270,7 @@ function LocationDetailContent() {
 
       {/* 5-Step BLE Onboarding Modal */}
       {showBleModal && (
-        <BleOnboardingModal group={group} onClose={() => setShowBleModal(false)} />
+        <BleOnboardingModal initialScan={bleScan} group={group} onClose={() => setShowBleModal(false)} />
       )}
     </div>
   );

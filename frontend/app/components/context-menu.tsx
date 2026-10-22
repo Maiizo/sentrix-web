@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSentrix, type Group } from "../lib/sentrix-store";
+import { scanSentrixHardware, type ScanResult } from "../lib/sentrix-bluetooth";
 import { BleOnboardingModal } from "../dashboard/[groupName]/ble-onboarding-modal";
 
 interface SentrixContextMenuProps {
@@ -197,6 +198,11 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
   const [menuState, setMenuState] = useState<MenuState | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeBleGroup, setActiveBleGroup] = useState<Group | null>(null);
+  const [bleScan, setBleScan] = useState<Promise<ScanResult>>();
+  function openBleModal(group: Group) {
+    setBleScan(scanSentrixHardware());
+    setActiveBleGroup(group);
+  }
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showGroupPickerModal, setShowGroupPickerModal] = useState(false);
 
@@ -383,7 +389,7 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
                 type="button"
                 onClick={() => {
                   closeMenu();
-                  setActiveBleGroup(group);
+                  openBleModal(group);
                 }}
                 className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
               >
@@ -456,7 +462,7 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
                   type="button"
                   onClick={() => {
                     closeMenu();
-                    setActiveBleGroup(group);
+                    openBleModal(group);
                   }}
                   className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
                 >
@@ -581,7 +587,7 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
               type="button"
               onClick={() => {
                 closeMenu();
-                setActiveBleGroup(currentRouteGroup);
+                openBleModal(currentRouteGroup);
               }}
               className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
             >
@@ -734,6 +740,7 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
       {/* Built-in BLE Onboarding Modal */}
       {activeBleGroup && (
         <BleOnboardingModal
+          initialScan={bleScan}
           group={activeBleGroup}
           onClose={() => setActiveBleGroup(null)}
         />
@@ -754,7 +761,7 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
           onClose={() => setShowGroupPickerModal(false)}
           onSelect={(group) => {
             setShowGroupPickerModal(false);
-            setActiveBleGroup(group);
+            openBleModal(group);
           }}
         />
       )}

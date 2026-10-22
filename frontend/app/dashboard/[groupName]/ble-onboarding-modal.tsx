@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSentrix, type Group } from "../../lib/sentrix-store";
 
-const SENTRIX_BLE_SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0";
+import { scanSentrixHardware, provisionSentrixHardware, SENTRIX_BLE_SERVICE_UUID, type ScanResult, type SentrixHardware } from "../../lib/sentrix-bluetooth";
 
 type BleDiscoveredDevice = {
   macAddress: string;
   name: string;
-  rssi: number;
+  rssi: number | null;
 };
 
 const SIMULATED_DEVICES: BleDiscoveredDevice[] = [
@@ -20,14 +20,16 @@ const SIMULATED_DEVICES: BleDiscoveredDevice[] = [
 export function BleOnboardingModal({
   group,
   onClose,
+  initialScan,
 }: {
   group: Group;
   onClose: () => void;
+  initialScan?: Promise<ScanResult>;
 }) {
   const { addDeviceToGroup } = useSentrix();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [isScanning, setIsScanning] = useState(false);
+  const [isScanning, setIsScanning] = useState(Boolean(initialScan));
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [discoveredDevices, setDiscoveredDevices] = useState<BleDiscoveredDevice[]>([]);
 
@@ -49,81 +51,47 @@ export function BleOnboardingModal({
     }
   });
   const [wifiPassword, setWifiPassword] = useState("");
+  const [hardware, setHardware] = useState<SentrixHardware | null>(null);
+  const [provisionError, setProvisionError] = useState("");
   const [isProvisioning, setIsProvisioning] = useState(false);
 
-  // Web Bluetooth Scan Handler
-  async function handleWebBluetoothScan(mode: "sentrix" | "all" = "sentrix") {
-    setIsScanning(true);
-    setScanMessage(
-      mode === "all"
-        ? "Opening Bluetooth chooser for all nearby BLE devices…"
-        : "Scanning for Sentrix hardware (UUID 12345678… / Sentrix-* / ESP-*)…",
-    );
-
-    if (typeof navigator === "undefined" || !("bluetooth" in navigator)) {
-      setScanMessage(
-        "Web Bluetooth API is not supported in this browser. Please use Google Chrome or Microsoft Edge, or click 'Simulate Discovered Sentrix Nodes' below.",
-      );
-      setIsScanning(false);
-      return;
-    }
-
-    try {
-      const navBluetooth = (navigator as unknown as {
-        bluetooth: {
-          requestDevice: (opts: unknown) => Promise<{ id: string; name?: string }>;
-        };
-      }).bluetooth;
-
-      const options =
-        mode === "all"
-          ? {
-              acceptAllDevices: true,
-              optionalServices: [SENTRIX_BLE_SERVICE_UUID, "generic_access"],
-            }
-          : {
-              filters: [
-                { services: [SENTRIX_BLE_SERVICE_UUID] },
-                { namePrefix: "Sentrix" },
-                { namePrefix: "sentrix" },
-                { namePrefix: "ESP" },
-              ],
-              optionalServices: [SENTRIX_BLE_SERVICE_UUID, "generic_access"],
-            };
-
-      const device = await navBluetooth.requestDevice(options);
-
-      if (device) {
-        const syntheticMac = `24:6F:28:${device.id.slice(0, 2).toUpperCase()}:${device.id.slice(2, 4).toUpperCase()}:${device.id.slice(4, 6).toUpperCase()}`;
-        const found: BleDiscoveredDevice = {
-          macAddress: syntheticMac,
-          name: device.name || "Sentrix-AC-Hardware",
-          rssi: -52,
-        };
-        setDiscoveredDevices([found, ...SIMULATED_DEVICES]);
-        setSelectedMac(found.macAddress);
-        setSensorName(found.name || "MCB Panel AC-04");
-        setScanMessage(null);
+  useEffect(() => {
+    if (!initialScan) return;
+    let cancelled = false;
+    initialScan.then((result) => {
+      if (cancelled) return;
+      if (typeof result === "string") setScanMessage(result);
+      else {
+        setHardware(result);
+        setDiscoveredDevices([{ ...result, rssi: null }]);
+        setSelectedMac(result.macAddress);
+        setSensorName(result.name);
         setStep(2);
       }
-    } catch (err: unknown) {
-      const errorStr = String(err);
-      if (errorStr.includes("User cancelled") || errorStr.includes("cancelled")) {
-        setScanMessage(
-          "Bluetooth pairing dismissed. If you don't have a physical Sentrix ESP32 powered on nearby, click 'Simulate Discovered Sentrix Nodes' to continue.",
-        );
-      } else {
-        setScanMessage(
-          `Bluetooth: ${errorStr.replace(/^NotFoundError:\s*/i, "")}. Click 'Simulate Discovered Sentrix Nodes' to test onboarding without physical hardware.`,
-        );
-      }
-    } finally {
       setIsScanning(false);
+    });
+    return () => { cancelled = true; };
+  }, [initialScan]);
+
+  async function handleWebBluetoothScan() {
+    setIsScanning(true);
+    setScanMessage("Scanning for the Sentrix BLE service...");
+    const result = await scanSentrixHardware();
+    if (typeof result === "string") setScanMessage(result);
+    else {
+      setHardware(result);
+      setDiscoveredDevices([{ ...result, rssi: null }]);
+      setSelectedMac(result.macAddress);
+      setSensorName(result.name);
+      setScanMessage(null);
+      setStep(2);
     }
+    setIsScanning(false);
   }
 
   // Simulation handler
   function handleSimulateDiscovery() {
+    setHardware(null);
     setDiscoveredDevices(SIMULATED_DEVICES);
     setSelectedMac(SIMULATED_DEVICES[0].macAddress);
     setSensorName(SIMULATED_DEVICES[0].name.replace("Sentrix-AC-Node", "MCB Panel AC"));
@@ -150,31 +118,31 @@ export function BleOnboardingModal({
   }
 
   // Step 4 Submission (Provisioning)
-  function handleProvisionSubmit(e: React.FormEvent) {
+  async function handleProvisionSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!wifiSsid.trim()) return;
-
-    try {
-      localStorage.setItem("sentrix-wifi-ssid", wifiSsid);
-    } catch {
-      // Storage unavailable
-    }
-
+    if (!wifiSsid.trim() || isProvisioning) return;
+    setProvisionError("");
     setIsProvisioning(true);
-
-    // Simulate write to NVS Flash and ESP-Mesh initialization
-    setTimeout(() => {
-      // Persist to Sentrix store
+    try {
+      if (hardware) {
+        await provisionSentrixHardware(hardware, {
+          ssid: wifiSsid, password: wifiPassword, pin: pinCode, group_id: group.id,
+        });
+      }
+      try { localStorage.setItem("sentrix-wifi-ssid", wifiSsid); } catch { /* Storage unavailable */ }
       addDeviceToGroup(group.id, {
         name: sensorName.trim() || "MCB Panel AC-04",
         macAddress: selectedMac,
-        pinCode,
+        pinCode: hardware ? "" : pinCode,
         targetTempC: 22,
       });
-
-      setIsProvisioning(false);
+      setWifiPassword("");
       setStep(5);
-    }, 1200);
+    } catch (error) {
+      setProvisionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsProvisioning(false);
+    }
   }
 
   return (
@@ -283,7 +251,7 @@ export function BleOnboardingModal({
                 <button
                   type="button"
                   id="ble-scan-real-button"
-                  onClick={() => handleWebBluetoothScan("sentrix")}
+                  onClick={() => handleWebBluetoothScan()}
                   disabled={isScanning}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-[var(--surface-hover)] px-4 text-xs font-semibold text-[var(--text-primary)] transition hover:border-amber-500 disabled:opacity-50"
                 >
@@ -293,12 +261,12 @@ export function BleOnboardingModal({
                 <button
                   type="button"
                   id="ble-scan-all-button"
-                  onClick={() => handleWebBluetoothScan("all")}
+                  onClick={() => handleWebBluetoothScan()}
                   disabled={isScanning}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-hover)] disabled:opacity-50"
-                  title="Scan for any nearby Bluetooth LE peripheral without UUID filter"
+                  title="Only devices advertising the Sentrix service are allowed"
                 >
-                  Scan Any BLE Device
+                  Retry Sentrix Scan
                 </button>
               </div>
 
@@ -309,7 +277,7 @@ export function BleOnboardingModal({
                   <span>Why does Chrome say &ldquo;No compatible devices found&rdquo;?</span>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-muted)]">
-                  Web Bluetooth scans the room for physical microcontrollers (ESP32) actively broadcasting GATT Service UUID <code className="font-mono text-amber-500">{SENTRIX_BLE_SERVICE_UUID.slice(0, 13)}…</code> or advertising as <code className="font-mono text-amber-500">Sentrix-*</code>. If you are developing locally without a physical ESP32 powered on right next to your computer, click <strong className="text-amber-500">&ldquo;Simulate Discovered Sentrix Nodes&rdquo;</strong> to test the full 5-step onboarding flow.
+                  Web Bluetooth scans the room for physical microcontrollers (ESP32) actively broadcasting GATT Service UUID <code className="font-mono text-amber-500">{SENTRIX_BLE_SERVICE_UUID.slice(0, 13)}…</code>. If you are developing locally without a physical ESP32 powered on right next to your computer, click <strong className="text-amber-500">&ldquo;Simulate Discovered Sentrix Nodes&rdquo;</strong> to test the full 5-step onboarding flow.
                 </p>
               </div>
             </div>
@@ -357,7 +325,7 @@ export function BleOnboardingModal({
                         </div>
                       </div>
                       <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] text-emerald-500">
-                        RSSI {dev.rssi} dBm · BLE Ready
+                        {dev.rssi === null ? "BLE Ready" : `RSSI ${dev.rssi} dBm · BLE Ready`}
                       </span>
                     </label>
                   ))}
@@ -502,6 +470,7 @@ export function BleOnboardingModal({
 
               </div>
 
+              {provisionError && <p role="alert" className="text-xs text-red-500 font-mono">{provisionError}</p>}
               <div className="flex justify-between pt-2">
                 <button
                   type="button"
@@ -547,7 +516,7 @@ export function BleOnboardingModal({
                   Sensor Connected & Baseline Calibration Started
                 </h3>
                 <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-[var(--text-muted)]">
-                  GATT JSON credentials were successfully committed to non-volatile flash. Node joined the location group.
+                  {hardware ? "Wi-Fi connected and credentials saved on the ESP32. Node assigned to this location group." : "Simulated node added to this location group."}
                 </p>
               </div>
 
