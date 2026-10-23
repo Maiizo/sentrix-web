@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSentrix, type Group } from "../../lib/sentrix-store";
+import { useEffect, useRef, useState } from "react";
+import { assertDeviceNotRegistered, useSentrix, type Group } from "../../lib/sentrix-store";
 
-import { scanSentrixHardware, provisionSentrixHardware, SENTRIX_BLE_SERVICE_UUID, type ScanResult, type SentrixHardware } from "../../lib/sentrix-bluetooth";
+import { authenticateSentrixHardware, scanSentrixHardware, provisionSentrixHardware, SENTRIX_BLE_SERVICE_UUID, type ScanResult, type SentrixHardware } from "../../lib/sentrix-bluetooth";
 
 type BleDiscoveredDevice = {
   macAddress: string;
@@ -40,6 +40,7 @@ export function BleOnboardingModal({
   // Step 3 Form (6-digit PIN)
   const [pinCode, setPinCode] = useState("715204");
   const [pinError, setPinError] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Step 4 Form (Wi-Fi + Mesh)
   const [wifiSsid, setWifiSsid] = useState(() => {
@@ -55,13 +56,27 @@ export function BleOnboardingModal({
   const [provisionError, setProvisionError] = useState("");
   const [isProvisioning, setIsProvisioning] = useState(false);
 
+  const hardwareRef = useRef<SentrixHardware | null>(null);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      hardwareRef.current?.device.gatt?.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     if (!initialScan) return;
     let cancelled = false;
     initialScan.then((result) => {
-      if (cancelled) return;
+      if (cancelled) {
+        if (!mounted.current && typeof result !== "string") result.device.gatt?.disconnect();
+        return;
+      }
       if (typeof result === "string") setScanMessage(result);
       else {
+        hardwareRef.current = result;
         setHardware(result);
         setDiscoveredDevices([{ ...result, rssi: null }]);
         setSelectedMac(result.macAddress);
@@ -74,11 +89,18 @@ export function BleOnboardingModal({
   }, [initialScan]);
 
   async function handleWebBluetoothScan() {
+    hardwareRef.current?.device.gatt?.disconnect();
+    hardwareRef.current = null;
     setIsScanning(true);
     setScanMessage("Scanning for the Sentrix BLE service...");
     const result = await scanSentrixHardware();
+    if (!mounted.current) {
+      if (typeof result !== "string") result.device.gatt?.disconnect();
+      return;
+    }
     if (typeof result === "string") setScanMessage(result);
     else {
+      hardwareRef.current = result;
       setHardware(result);
       setDiscoveredDevices([{ ...result, rssi: null }]);
       setSelectedMac(result.macAddress);
@@ -91,6 +113,8 @@ export function BleOnboardingModal({
 
   // Simulation handler
   function handleSimulateDiscovery() {
+    hardwareRef.current?.device.gatt?.disconnect();
+    hardwareRef.current = null;
     setHardware(null);
     setDiscoveredDevices(SIMULATED_DEVICES);
     setSelectedMac(SIMULATED_DEVICES[0].macAddress);
@@ -107,14 +131,24 @@ export function BleOnboardingModal({
   }
 
   // Step 3 Submission
-  function handlePinSubmit(e: React.FormEvent) {
+  async function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isAuthenticating) return;
     if (!/^\d{6}$/.test(pinCode)) {
       setPinError("Please enter a valid 6-digit numeric PIN.");
       return;
     }
     setPinError("");
-    setStep(4);
+    setIsAuthenticating(true);
+    try {
+      assertDeviceNotRegistered(selectedMac);
+      if (hardware) await authenticateSentrixHardware(hardware, pinCode);
+      if (mounted.current) setStep(4);
+    } catch (error) {
+      setPinError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsAuthenticating(false);
+    }
   }
 
   // Step 4 Submission (Provisioning)
@@ -124,6 +158,7 @@ export function BleOnboardingModal({
     setProvisionError("");
     setIsProvisioning(true);
     try {
+      assertDeviceNotRegistered(selectedMac);
       if (hardware) {
         await provisionSentrixHardware(hardware, {
           ssid: wifiSsid, password: wifiPassword, pin: pinCode, group_id: group.id,
@@ -243,6 +278,7 @@ export function BleOnboardingModal({
                 <button
                   type="button"
                   id="ble-scan-simulate-button"
+                  disabled={isScanning}
                   onClick={handleSimulateDiscovery}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
                 >
@@ -410,6 +446,7 @@ export function BleOnboardingModal({
                 <button
                   type="button"
                   onClick={() => setStep(2)}
+                  disabled={isAuthenticating}
                   className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
                 >
                   ← Back
@@ -417,7 +454,7 @@ export function BleOnboardingModal({
                 <button
                   type="submit"
                   id="pin-submit-button"
-                  disabled={pinCode.length !== 6}
+                  disabled={isAuthenticating || pinCode.length !== 6}
                   className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400 disabled:opacity-50"
                 >
                   Next: Configure Wi-Fi →

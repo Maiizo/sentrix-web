@@ -346,15 +346,32 @@ function createGroup(name: string, description = ""): Group {
   return group;
 }
 
+export function assertDeviceNotRegistered(macAddress: string) {
+  const mac = macAddress.trim().toUpperCase();
+  if (!/^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(mac)) {
+    throw new Error("Invalid hardware MAC address. Rescan the device.");
+  }
+  // Read persisted data so another tab's completed registration is also detected.
+  const current = load();
+  const existing = current.devices.find(d => d.macAddress.trim().toUpperCase() === mac);
+  if (existing) {
+    const group = current.groups.find(g => g.id === existing.groupId);
+    throw new Error(`This device is already registered as "${existing.name}" in "${group?.name ?? "another group"}". Remove its existing registration before adding it again.`);
+  }
+}
+
 function addDeviceToGroup(
   groupId: string,
   payload: { name: string; macAddress: string; pinCode: string; targetTempC: number },
 ): Device {
+  assertDeviceNotRegistered(payload.macAddress);
+  state = load();
   const now = Date.now();
   const device: Device = {
     id: crypto.randomUUID(),
     groupId,
     ...payload,
+    macAddress: payload.macAddress.trim().toUpperCase(),
     status: "CALIBRATING",
     calibrationStartedAt: new Date(now).toISOString(),
     calibrationEndsAt: new Date(now + 7 * DAY).toISOString(),
