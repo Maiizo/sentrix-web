@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSentrix, type Group } from "../lib/sentrix-store";
 import { scanSentrixHardware, type ScanResult } from "../lib/sentrix-bluetooth";
+import { useConfirm } from "./confirm-modal";
 import { BleOnboardingModal } from "../dashboard/[groupName]/ble-onboarding-modal";
 
 interface SentrixContextMenuProps {
@@ -192,8 +193,8 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
     resolveAlert,
     dispatchMaintenance,
     simulateNewAnomaly,
-    resetDemoData,
   } = useSentrix();
+  const confirm = useConfirm();
 
   const [menuState, setMenuState] = useState<MenuState | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -420,9 +421,16 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
               <div className="my-1 border-t border-[var(--border)]" />
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   closeMenu();
-                  if (confirm(`Are you sure you want to delete "${group.name}" and all its devices?`)) {
+                  const ok = await confirm({
+                    title: "Delete Location Group",
+                    message: `Are you sure you want to delete "${group.name}" and all its devices? This action cannot be undone.`,
+                    confirmText: "Delete Group",
+                    cancelText: "Cancel",
+                    type: "danger",
+                  });
+                  if (ok) {
                     deleteGroup(group.id);
                     showToast(`Group "${group.name}" deleted`);
                   }
@@ -494,9 +502,16 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
               <div className="my-1 border-t border-[var(--border)]" />
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   closeMenu();
-                  if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
+                  const ok = await confirm({
+                    title: "Delete Sensor",
+                    message: `Are you sure you want to delete "${device.name}"? Telemetry recording will stop and all sensor historical logs will be removed.`,
+                    confirmText: "Delete Sensor",
+                    cancelText: "Cancel",
+                    type: "danger",
+                  });
+                  if (ok) {
                     deleteDevice(device.id);
                     showToast(`Sensor "${device.name}" deleted`);
                   }
@@ -675,22 +690,6 @@ function SentrixContextMenuContent({ isDark, onToggleTheme }: SentrixContextMenu
             className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:text-amber-500 rounded-lg transition-colors cursor-pointer"
           >
             <span>Switch to {isDark ? "Light" : "Dark"} Theme</span>
-          </button>
-
-          <div className="my-1 border-t border-[var(--border)]" />
-
-          <button
-            type="button"
-            onClick={() => {
-              closeMenu();
-              if (confirm("Reset all telemetry and demo data back to default state?")) {
-                resetDemoData();
-                showToast("Demo data reset to factory state");
-              }
-            }}
-            className="w-full flex items-center justify-between text-left px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-          >
-            <span>Reset Demo Data</span>
           </button>
         </div>
       </>

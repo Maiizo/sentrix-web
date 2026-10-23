@@ -3,7 +3,7 @@ import { AuthForm } from "../components/auth-form";
 
 export const metadata: Metadata = {
   title: "Log in | Sentrix",
-  description: "Log in to your Sentrix operations workspace.",
+  description: "Log in to Sentrix.",
 };
 
 export default function LoginPage() {

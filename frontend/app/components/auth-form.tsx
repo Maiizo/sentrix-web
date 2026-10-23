@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Brand, BrandMark } from "./brand";
-import { ThemeToggle } from "./theme-toggle";
 import { isSupabaseConfigured, supabase } from "../lib/supabase-browser";
 
 type AuthFormProps = {
@@ -21,9 +20,7 @@ function AuthArtwork() {
       </div>
       <div className="relative">
         <div className="mb-5 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/15 bg-amber-500/[0.08] text-amber-500">
-            <BrandMark className="h-5 w-5 rounded-md" />
-          </span>
+          <BrandMark className="h-7 w-7 rounded-lg" />
           <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-500">
             AC energy example
           </span>
@@ -33,10 +30,7 @@ function AuthArtwork() {
           <br />
           <span className="text-[var(--text-muted)]">Waste less cooling energy.</span>
         </h2>
-        <p className="mt-4 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
-          One clear view of AC energy use, cooling health, and the alerts that
-          deserve your team’s attention.
-        </p>
+     
         <div className="mt-9 max-w-md rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
@@ -67,8 +61,7 @@ function AuthArtwork() {
         </div>
       </div>
       <div className="relative flex items-center justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
-        <span>Smarter cooling. Clear decisions.</span>
-        <span>01 — 03</span>
+        
       </div>
     </aside>
   );
@@ -121,51 +114,29 @@ export function AuthForm({ mode }: AuthFormProps) {
     router.push("/dashboard");
   }
 
-  async function handleOAuth(provider: "google" | "azure") {
-    setFormError("");
-    if (!isSupabaseConfigured || !supabase) {
-      router.push("/dashboard");
-      return;
-    }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    });
-    if (error) setFormError(error.message);
-  }
 
   return (
     <main className="grid min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] transition-colors duration-200 lg:grid-cols-[minmax(420px,0.88fr)_minmax(0,1.12fr)]">
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between">
           <Brand />
-          <div className="flex items-center gap-3">
-            <ThemeToggle showLabel={false} />
-            <Link
-              href="/"
-              className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
-            >
-              Back to home
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+          >
+            Back to home
+          </Link>
         </div>
 
         <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col justify-center py-12">
           <div className="mb-7 lg:hidden">
             <BrandMark className="h-9 w-9 rounded-xl" />
           </div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-500">
-            {isSignup ? "Start with Sentrix" : "Welcome back"}
-          </p>
+         
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.055em] text-[var(--text-primary)] sm:text-4xl">
             {isSignup ? "Create your account" : "Log in to Sentrix"}
           </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {isSignup
-              ? "Set up your workspace and bring your fleet into focus."
-              : "Your operation is right where you left it."}
-          </p>
-
+         
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             {isSignup && (
               <label className="block">
@@ -183,7 +154,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
             <label className="block">
               <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-                Work email
+                Email
               </span>
               <input
                 autoComplete="email"
@@ -259,39 +230,6 @@ export function AuthForm({ mode }: AuthFormProps) {
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <span className="h-px flex-1 bg-[var(--border)]" />
-            or continue with
-            <span className="h-px flex-1 bg-[var(--border)]" />
-          </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => handleOAuth("google")}
-              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] transition hover:border-amber-500/40 hover:bg-[var(--surface-hover)]"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.8Z" />
-                <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24Z" />
-                <path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1Z" />
-                <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.8 3.6-4.9 6.7-4.9Z" />
-              </svg>
-              Sign in with Google
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOAuth("azure")}
-              className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] transition hover:border-amber-500/40 hover:bg-[var(--surface-hover)]"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                <path fill="#F25022" d="M1 1h10.5v10.5H1z" />
-                <path fill="#7FBA00" d="M12.5 1H23v10.5H12.5z" />
-                <path fill="#00A4EF" d="M1 12.5h10.5V23H1z" />
-                <path fill="#FFB900" d="M12.5 12.5H23V23H12.5z" />
-              </svg>
-              Sign in with Microsoft
-            </button>
-          </div>
 
           {formError && (
             <p
@@ -314,8 +252,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div className="flex justify-between font-mono text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
-          <span>Sentrix · AC climate intelligence</span>
-          <span>Secure workspace</span>
+         
         </div>
       </section>
       <AuthArtwork />

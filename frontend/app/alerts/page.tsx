@@ -37,7 +37,6 @@ function AlertsContent() {
     groups,
     submitAlertFeedback,
     resolveAlert,
-    simulateNewAnomaly,
   } = useSentrix();
 
   // Top-bar Filter Controls
@@ -47,21 +46,7 @@ function AlertsContent() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  function triggerSimulateAnomaly() {
-    if (
-      typeof window !== "undefined" &&
-      "Notification" in window &&
-      Notification.permission === "default"
-    ) {
-      Notification.requestPermission();
-    }
 
-    const newAlert = simulateNewAnomaly();
-    const dev = devices.find((d) => d.id === newAlert.deviceId);
-    showToast(
-      `Anomaly simulated on ${dev?.name ?? "AC Circuit"} (${newAlert.actualValue} A)!`,
-    );
-  }
 
   function showToast(msg: string) {
     setToastMessage(msg);
@@ -108,7 +93,7 @@ function AlertsContent() {
     return (
       <AppShell>
         <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-          Loading anomaly telemetry…
+          Loading…
         </p>
       </AppShell>
     );
@@ -130,18 +115,6 @@ function AlertsContent() {
                 </span>
               )}
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              id="simulate-anomaly-btn"
-              onClick={triggerSimulateAnomaly}
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-[#20170a] shadow-sm shadow-amber-500/20 transition hover:bg-amber-400"
-            >
-              <span className="flex h-2 w-2 rounded-full bg-red-600 animate-pulse" />
-              ⚡ Simulate New Anomaly
-            </button>
           </div>
         </div>
 
@@ -455,7 +428,7 @@ export default function AlertsPage() {
       fallback={
         <AppShell>
           <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-            Loading equipment anomalies…
+            Loading…
           </p>
         </AppShell>
       }
