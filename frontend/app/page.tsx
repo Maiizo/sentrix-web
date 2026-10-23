@@ -1038,7 +1038,18 @@ export default function Home() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 border-t border-[var(--border)] pt-6 font-mono text-xs uppercase tracking-wider text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
-            <span>Sentrix</span>
+            <span className="flex items-center gap-2">
+              <img
+                src="/images/logo-text-dark.png"
+                alt="Sentrix"
+                className="h-4 w-auto object-contain logo-dark-theme"
+              />
+              <img
+                src="/images/logo-text-light.png"
+                alt="Sentrix"
+                className="h-4 w-auto object-contain logo-light-theme"
+              />
+            </span>
             <span>© 2026 Sentrix. All rights reserved.</span>
           </div>
         </div>

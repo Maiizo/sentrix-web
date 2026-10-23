@@ -20,9 +20,7 @@ function AuthArtwork() {
       </div>
       <div className="relative">
         <div className="mb-5 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/15 bg-amber-500/[0.08] text-amber-500">
-            <BrandMark className="h-5 w-5 rounded-md" />
-          </span>
+          <BrandMark className="h-7 w-7 rounded-lg" />
           <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-500">
             AC energy example
           </span>
