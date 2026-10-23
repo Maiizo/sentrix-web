@@ -10,6 +10,7 @@ type FaultScenario = "filter" | "leak" | "after_hours";
 export default function Home() {
   const [activeScenario, setActiveScenario] = useState<FaultScenario>("filter");
   const [operatorFeedback, setOperatorFeedback] = useState<string | null>(null);
+  const [hardwareView, setHardwareView] = useState<"photo" | "schematic">("photo");
 
   return (
     <main className="min-h-screen bg-[var(--canvas)] font-sans text-[var(--text-primary)] transition-colors duration-200">
@@ -396,66 +397,128 @@ export default function Home() {
             {/* Left Column (6 cols) — Product Photo & Annotated Hardware Callout Frame */}
             <div className="lg:col-span-6 flex flex-col justify-between min-h-[460px] rounded-2xl border-2 border-amber-500/30 bg-[#151613] p-6 text-stone-100 relative overflow-hidden shadow-2xl">
               <div>
-                <div className="flex items-center justify-between border-b border-stone-800 pb-3">
-                  <span className="font-mono text-xs uppercase tracking-wider text-amber-400">
-                    SENTRIX-HW-KIT-V2 · FIELD ASSEMBLY
-                  </span>
-                  <span className="rounded bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 font-mono text-xs text-amber-400">
-                    FIELD WIRING SCHEMATIC
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-800 pb-3">
+                  <div>
+                    <span className="font-mono text-xs uppercase tracking-wider text-amber-400">
+                      SENTRIX-HW-KIT-V2 · FIELD ASSEMBLY
+                    </span>
+                    <p className="mt-0.5 font-mono text-[11px] text-stone-400">
+                      Non-invasive edge node prototype
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-lg border border-stone-800 bg-[#0d0e0c] p-1 font-mono text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setHardwareView("photo")}
+                      className={`rounded px-2.5 py-1 font-medium transition ${
+                        hardwareView === "photo"
+                          ? "bg-amber-500 text-[#17140d] font-semibold shadow-sm"
+                          : "text-stone-400 hover:text-stone-200"
+                      }`}
+                    >
+                      📷 Hardware Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHardwareView("schematic")}
+                      className={`rounded px-2.5 py-1 font-medium transition ${
+                        hardwareView === "schematic"
+                          ? "bg-amber-500 text-[#17140d] font-semibold shadow-sm"
+                          : "text-stone-400 hover:text-stone-200"
+                      }`}
+                    >
+                      ⚡ Schematic
+                    </button>
+                  </div>
                 </div>
 
                 {/* Hardware Photo / Technical Schematic Container */}
-                <div className="relative mt-5 flex min-h-[260px] items-center justify-center rounded-xl border border-stone-800 bg-[#0d0e0c] p-4">
-                  <svg viewBox="0 0 540 250" className="h-full w-full" fill="none">
-                    {/* Grid background lines */}
-                    <defs>
-                      <pattern id="schematicGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#252720" strokeWidth="0.5" />
-                      </pattern>
-                    </defs>
-                    <rect width="540" height="250" fill="url(#schematicGrid)" />
+                {hardwareView === "photo" ? (
+                  <div className="relative mt-5 overflow-hidden rounded-xl border border-stone-800 bg-[#0d0e0c] group">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/60 sm:aspect-[16/9]">
+                      <img
+                        src="/images/esp32-sensor-prototype.jpg"
+                        alt="Sentrix ESP32 IoT Sensor Node Prototype"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0d0e0c] via-transparent to-black/40 pointer-events-none" />
 
-                    {/* MCB Breaker Box */}
-                    <rect x="25" y="30" width="80" height="150" rx="6" fill="#1d201a" stroke="#484a40" strokeWidth="2" />
-                    <rect x="40" y="50" width="50" height="40" rx="3" fill="#2b2e25" />
-                    <text x="65" y="75" fill="#f59e0b" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">MCB 32A</text>
-                    <circle cx="65" cy="115" r="7" fill="#ef4444" />
-                    <text x="65" y="145" fill="#a1a198" fontSize="9" fontFamily="monospace" textAnchor="middle">LIVE FEED</text>
+                      {/* Top Status Badges */}
+                      <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-black/70 px-2.5 py-1 font-mono text-[10px] font-semibold text-emerald-400 backdrop-blur-md">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
+                          Lab Prototype Node
+                        </span>
+                        <span className="rounded-full border border-amber-500/30 bg-black/70 px-2.5 py-1 font-mono text-[10px] text-amber-300 backdrop-blur-md">
+                          ESP32 + IR + SCT-013 Jack
+                        </span>
+                      </div>
 
-                    {/* Live Wire Running Out */}
-                    <path d="M 65 180 L 65 220 L 220 220 L 220 80" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round" />
+                      {/* Bottom Annotations Bar */}
+                      <div className="absolute bottom-3 inset-x-3 rounded-lg border border-white/10 bg-[#161813]/90 p-2.5 backdrop-blur-md">
+                        <div className="flex items-center justify-between font-mono text-xs">
+                          <span className="text-stone-200 font-medium">
+                            Sentrix Edge Node Assembly
+                          </span>
+                          <span className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">
+                            ESP-WROOM-32
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative mt-5 flex min-h-[260px] items-center justify-center rounded-xl border border-stone-800 bg-[#0d0e0c] p-4">
+                    <svg viewBox="0 0 540 250" className="h-full w-full" fill="none">
+                      {/* Grid background lines */}
+                      <defs>
+                        <pattern id="schematicGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#252720" strokeWidth="0.5" />
+                        </pattern>
+                      </defs>
+                      <rect width="540" height="250" fill="url(#schematicGrid)" />
 
-                    {/* SCT-013 Split-Core Current Transformer clamped on wire */}
-                    <rect x="185" y="120" width="70" height="70" rx="10" fill="#20221c" stroke="#f59e0b" strokeWidth="2.5" />
-                    <circle cx="220" cy="155" r="16" fill="#11120f" stroke="#484a40" strokeWidth="2" />
-                    <text x="220" y="159" fill="#f59e0b" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">SCT-013</text>
-                    <rect x="175" y="145" width="10" height="20" rx="2" fill="#f59e0b" />
+                      {/* MCB Breaker Box */}
+                      <rect x="25" y="30" width="80" height="150" rx="6" fill="#1d201a" stroke="#484a40" strokeWidth="2" />
+                      <rect x="40" y="50" width="50" height="40" rx="3" fill="#2b2e25" />
+                      <text x="65" y="75" fill="#f59e0b" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">MCB 32A</text>
+                      <circle cx="65" cy="115" r="7" fill="#ef4444" />
+                      <text x="65" y="145" fill="#a1a198" fontSize="9" fontFamily="monospace" textAnchor="middle">LIVE FEED</text>
 
-                    {/* 3.5mm Signal Cable */}
-                    <path d="M 255 155 C 290 155, 300 120, 325 120" stroke="#a1a198" strokeWidth="2" strokeDasharray="3 3" />
+                      {/* Live Wire Running Out */}
+                      <path d="M 65 180 L 65 220 L 220 220 L 220 80" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round" />
 
-                    {/* ESP32 Core Controller PCB */}
-                    <rect x="325" y="40" width="185" height="155" rx="8" fill="#191c15" stroke="#10b981" strokeWidth="2" />
-                    <text x="417" y="65" fill="#10b981" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ESP32 SENSOR NODE</text>
+                      {/* SCT-013 Split-Core Current Transformer clamped on wire */}
+                      <rect x="185" y="120" width="70" height="70" rx="10" fill="#20221c" stroke="#f59e0b" strokeWidth="2.5" />
+                      <circle cx="220" cy="155" r="16" fill="#11120f" stroke="#484a40" strokeWidth="2" />
+                      <text x="220" y="159" fill="#f59e0b" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">SCT-013</text>
+                      <rect x="175" y="145" width="10" height="20" rx="2" fill="#f59e0b" />
 
-                    {/* Bias Conditioning Circuit on PCB */}
-                    <rect x="345" y="80" width="70" height="45" rx="4" fill="#25291f" stroke="#383c30" />
-                    <text x="380" y="100" fill="#d4d4cc" fontSize="9" fontFamily="monospace" textAnchor="middle">1.65V DC Bias</text>
-                    <text x="380" y="115" fill="#f59e0b" fontSize="8" fontFamily="monospace" textAnchor="middle">Conditioning</text>
+                      {/* 3.5mm Signal Cable */}
+                      <path d="M 255 155 C 290 155, 300 120, 325 120" stroke="#a1a198" strokeWidth="2" strokeDasharray="3 3" />
 
-                    {/* Wi-Fi / BLE Antenna */}
-                    <path d="M 475 75 L 495 75 L 495 110" stroke="#f59e0b" strokeWidth="2" />
-                    <circle cx="495" cy="75" r="3" fill="#f59e0b" />
-                    <text x="475" y="125" fill="#a1a198" fontSize="8" fontFamily="monospace">ESP-Mesh</text>
+                      {/* ESP32 Core Controller PCB */}
+                      <rect x="325" y="40" width="185" height="155" rx="8" fill="#191c15" stroke="#10b981" strokeWidth="2" />
+                      <text x="417" y="65" fill="#10b981" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ESP32 SENSOR NODE</text>
 
-                    {/* IR Receiver Module */}
-                    <rect x="345" y="140" width="145" height="40" rx="4" fill="#22261c" stroke="#484a40" />
-                    <circle cx="365" cy="160" r="6" fill="#38bdf8" />
-                    <text x="425" y="157" fill="#38bdf8" fontSize="9" fontFamily="monospace" fontWeight="bold">IR RECEIVER (38kHz)</text>
-                    <text x="425" y="171" fill="#a1a198" fontSize="8" fontFamily="monospace">Decodes Remote Setpoint</text>
-                  </svg>
-                </div>
+                      {/* Bias Conditioning Circuit on PCB */}
+                      <rect x="345" y="80" width="70" height="45" rx="4" fill="#25291f" stroke="#383c30" />
+                      <text x="380" y="100" fill="#d4d4cc" fontSize="9" fontFamily="monospace" textAnchor="middle">1.65V DC Bias</text>
+                      <text x="380" y="115" fill="#f59e0b" fontSize="8" fontFamily="monospace" textAnchor="middle">Conditioning</text>
+
+                      {/* Wi-Fi / BLE Antenna */}
+                      <path d="M 475 75 L 495 75 L 495 110" stroke="#f59e0b" strokeWidth="2" />
+                      <circle cx="495" cy="75" r="3" fill="#f59e0b" />
+                      <text x="475" y="125" fill="#a1a198" fontSize="8" fontFamily="monospace">ESP-Mesh</text>
+
+                      {/* IR Receiver Module */}
+                      <rect x="345" y="140" width="145" height="40" rx="4" fill="#22261c" stroke="#484a40" />
+                      <circle cx="365" cy="160" r="6" fill="#38bdf8" />
+                      <text x="425" y="157" fill="#38bdf8" fontSize="9" fontFamily="monospace" fontWeight="bold">IR RECEIVER (38kHz)</text>
+                      <text x="425" y="171" fill="#a1a198" fontSize="8" fontFamily="monospace">Decodes Remote Setpoint</text>
+                    </svg>
+                  </div>
+                )}
 
                 {/* 3 Numbered Hardware Callout Pills */}
                 <div className="mt-5 space-y-2.5">
