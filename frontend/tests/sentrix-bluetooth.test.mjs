@@ -7,7 +7,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../app/lib/sentrix-bluetooth.ts", import.meta.url), "utf8");
 const { outputText } = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.CommonJS },
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 });
 const SERVICE = "12345678-1234-5678-1234-56789abcdef0";
 const credentials = { ssid: "Sentrix WiFi", password: "test-password", pin: "715204", group_id: "test-group" };
@@ -19,7 +19,7 @@ function load({ secure = true, bluetooth } = {}) {
   });
   return exports;
 }
-function peripheral({ mac = "24:6F:28:C2:5E:19", states = ["connecting", "connected"], resetState = "receiving", badProof = false, tamper = false } = {}) {
+function peripheral({ mac = "24:6F:28:C2:5E:19", states = ["connecting", "connected"], resetState = "receiving", badProof = false, tamper = false, networks = ["Office Wi-Fi", "BC 12 & 15 2G"], scanState = "wifi_scan_done", oldFirmware = false } = {}) {
   const writes = [];
   let disconnects = 0;
   const value = (text) => new DataView(new TextEncoder().encode(text).buffer);
@@ -52,6 +52,9 @@ function peripheral({ mac = "24:6F:28:C2:5E:19", states = ["connecting", "connec
             state = proof === request.proof ? "authenticated" : "invalid_pin";
             hello = createHmac("sha256", key).update("sentrix-device-v1").digest();
             if (badProof) hello[0] ^= 1;
+          } else if (request.op === "scan_wifi") {
+            assert.ok(key, "scan requires authentication");
+            state = scanState;
           } else {
             assert.ok(key);
             const data = Buffer.from(request.data, "hex");
@@ -66,10 +69,15 @@ function peripheral({ mac = "24:6F:28:C2:5E:19", states = ["connecting", "connec
           }
         } };
         if (uuid.endsWith("f3")) return { async readValue() {
+          if (Array.isArray(state)) return value(state.shift() || "wifi_scan_done");
           if (state === "connecting") return value(states.shift() || "connected");
           return value(state);
         } };
         if (uuid.endsWith("f4")) return { async readValue() { return new DataView(Uint8Array.from(hello).buffer); } };
+        if (uuid.endsWith("f5")) {
+          if (oldFirmware) throw new Error("Missing characteristic");
+          return { async readValue() { return value(JSON.stringify(networks)); } };
+        }
         assert.fail("Unknown characteristic");
       } };
     },
@@ -150,7 +158,7 @@ test("a busy device or stale success cannot acknowledge a new configuration", as
 
 test("website UUIDs match the single-file firmware contract", () => {
   const firmware = readFileSync(new URL("../../../../SentrixArduino/SentrixESP32/SentrixESP32.ino", import.meta.url), "utf8");
-  for (const uuid of source.matchAll(/"(12345678-1234-5678-1234-56789abcdef[0-4])"/g)) {
+  for (const uuid of source.matchAll(/"(12345678-1234-5678-1234-56789abcdef[0-5])"/g)) {
     assert.ok(firmware.includes(`"${uuid[1]}"`), `Missing firmware UUID ${uuid[1]}`);
   }
 });
@@ -202,4 +210,38 @@ test("device Wi-Fi failure remains a Wi-Fi error", async () => {
   const node = peripheral({ states: ["wifi_failed"] });
   await assert.rejects(load().provisionSentrixHardware({ device: node.device }, credentials),
     /ESP32 could not join Wi-Fi/);
+});
+
+test("ESP32 Wi-Fi scan returns exact SSIDs and preserves the session for provisioning", async () => {
+  const node = peripheral({ networks: ["BC 12 & 15 2G", "Café", "BC 12 & 15 2G"] });
+  const api = load();
+  const hardware = { device: node.device };
+  const names = await api.scanSentrixWifi(hardware, credentials.pin);
+  assert.equal(JSON.stringify(names), JSON.stringify(["BC 12 & 15 2G", "Café"]));
+  node.device.gatt.connect = async () => assert.fail("scan must preserve authenticated connection");
+  await api.provisionSentrixHardware(hardware, { ...credentials, ssid: names[0] });
+  assert.equal(node.decoded().ssid, names[0]);
+});
+
+test("empty scans are valid; malformed names and failed scans are rejected", async () => {
+  assert.equal((await load().scanSentrixWifi({ device: peripheral({ networks: [] }).device }, credentials.pin)).length, 0);
+  for (const options of [{ networks: [123] }, { networks: ["a".repeat(33)] }, { networks: ["bad\0name"] }, { scanState: "wifi_scan_failed" }]) {
+    const node = peripheral(options);
+    await assert.rejects(load().scanSentrixWifi({ device: node.device }, credentials.pin), /invalid Wi-Fi|radio could not complete/);
+  }
+});
+
+test("old firmware keeps manual provisioning available when scan is unsupported", async () => {
+  const node = peripheral({ oldFirmware: true });
+  const api = load();
+  const hardware = { device: node.device };
+  await assert.rejects(api.scanSentrixWifi(hardware, credentials.pin), /enter the SSID manually/);
+  await api.provisionSentrixHardware(hardware, credentials);
+  assert.equal(node.decoded().ssid, credentials.ssid);
+});
+
+test("scan tolerates pending command acknowledgement and reports unexpected firmware status", async () => {
+  const node = peripheral({ scanState: ["receiving", "scanning_wifi", "wifi_scan_done"] });
+  assert.equal((await load().scanSentrixWifi({ device: node.device }, credentials.pin))[0], "Office Wi-Fi");
+  await assert.rejects(load().scanSentrixWifi({ device: peripheral({ scanState: "ready" }).device }, credentials.pin), /scan status: ready/);
 });

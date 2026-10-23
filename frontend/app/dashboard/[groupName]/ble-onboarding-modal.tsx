@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { assertDeviceNotRegistered, useSentrix, type Group } from "../../lib/sentrix-store";
 
-import { authenticateSentrixHardware, scanSentrixHardware, provisionSentrixHardware, SENTRIX_BLE_SERVICE_UUID, type ScanResult, type SentrixHardware } from "../../lib/sentrix-bluetooth";
+import { scanSentrixWifi, authenticateSentrixHardware, scanSentrixHardware, provisionSentrixHardware, SENTRIX_BLE_SERVICE_UUID, type ScanResult, type SentrixHardware } from "../../lib/sentrix-bluetooth";
 
 type BleDiscoveredDevice = {
   macAddress: string;
@@ -51,6 +51,9 @@ export function BleOnboardingModal({
       return "Sentrix-Facilities-IoT";
     }
   });
+  const [wifiNetworks, setWifiNetworks] = useState<string[]>([]);
+  const [isScanningWifi, setIsScanningWifi] = useState(false);
+  const [wifiScanMessage, setWifiScanMessage] = useState("");
   const [wifiPassword, setWifiPassword] = useState("");
   const [hardware, setHardware] = useState<SentrixHardware | null>(null);
   const [provisionError, setProvisionError] = useState("");
@@ -143,7 +146,11 @@ export function BleOnboardingModal({
     try {
       assertDeviceNotRegistered(selectedMac);
       if (hardware) await authenticateSentrixHardware(hardware, pinCode);
-      if (mounted.current) setStep(4);
+      if (mounted.current) {
+        setWifiNetworks([]);
+        setWifiScanMessage("");
+        setStep(4);
+      }
     } catch (error) {
       setPinError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -151,10 +158,27 @@ export function BleOnboardingModal({
     }
   }
 
+  async function handleWifiScan() {
+    if (!hardware || isScanningWifi || isProvisioning) return;
+    setIsScanningWifi(true);
+    setWifiNetworks([]);
+    setWifiScanMessage("");
+    try {
+      const networks = await scanSentrixWifi(hardware, pinCode);
+      if (!mounted.current) return;
+      setWifiNetworks(networks);
+      setWifiScanMessage(networks.length ? "Select a network below. Showing up to 8 networks." : "No visible networks found. Retry or enter the SSID manually.");
+    } catch (error) {
+      setWifiScanMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsScanningWifi(false);
+    }
+  }
+
   // Step 4 Submission (Provisioning)
   async function handleProvisionSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!wifiSsid.trim() || isProvisioning) return;
+    if (!wifiSsid.trim() || isProvisioning || isScanningWifi) return;
     setProvisionError("");
     setIsProvisioning(true);
     try {
@@ -207,7 +231,7 @@ export function BleOnboardingModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={isProvisioning}
+              disabled={isProvisioning || isScanningWifi}
               className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)] transition disabled:opacity-50"
               aria-label="Close modal"
             >
@@ -491,6 +515,27 @@ export function BleOnboardingModal({
                   />
                 </label>
 
+                {hardware && (
+                  <div className="space-y-2">
+                    <button type="button" onClick={handleWifiScan}
+                      disabled={isScanningWifi || isProvisioning}
+                      className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs text-amber-500 disabled:opacity-50">
+                      {isScanningWifi ? "Scanning from ESP32…" : "Scan nearby Wi-Fi"}
+                    </button>
+                    {wifiScanMessage && <p role="status" className="text-xs text-[var(--text-muted)]">{wifiScanMessage}</p>}
+                    <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto">
+                      {wifiNetworks.map(ssid => (
+                        <button key={ssid} type="button" disabled={isProvisioning || isScanningWifi}
+                          onClick={() => setWifiSsid(ssid)}
+                          aria-pressed={wifiSsid === ssid}
+                          className="max-w-full break-all rounded-lg border border-[var(--border)] px-3 py-2 text-xs text-[var(--text-primary)] hover:border-amber-500 aria-pressed:border-amber-500 disabled:opacity-50">
+                          {ssid}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                     Wi-Fi WPA2 Password
@@ -511,7 +556,7 @@ export function BleOnboardingModal({
               <div className="flex justify-between pt-2">
                 <button
                   type="button"
-                  disabled={isProvisioning}
+                  disabled={isProvisioning || isScanningWifi}
                   onClick={() => setStep(3)}
                   className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
                 >
@@ -520,7 +565,7 @@ export function BleOnboardingModal({
                 <button
                   type="submit"
                   id="provision-submit-button"
-                  disabled={isProvisioning || !wifiSsid}
+                  disabled={isProvisioning || isScanningWifi || !wifiSsid}
                   className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-[#20170a] hover:bg-amber-400 disabled:opacity-50"
                 >
                   {isProvisioning ? (

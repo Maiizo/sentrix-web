@@ -3,6 +3,7 @@ const IDENTITY_UUID = "12345678-1234-5678-1234-56789abcdef1";
 const CONFIG_UUID = "12345678-1234-5678-1234-56789abcdef2";
 const STATUS_UUID = "12345678-1234-5678-1234-56789abcdef3";
 const SESSION_UUID = "12345678-1234-5678-1234-56789abcdef4";
+const NETWORKS_UUID = "12345678-1234-5678-1234-56789abcdef5";
 const sessions = new WeakMap<BluetoothDevice, { key: CryptoKey; challenge: Uint8Array<ArrayBuffer>; pin: string }>();
 const encode = (text: string) => new TextEncoder().encode(text);
 const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
@@ -15,6 +16,7 @@ const errors: Record<string, string> = {
   wifi_failed: "The ESP32 could not join Wi-Fi. Check the password and 2.4 GHz network.",
   storage_failed: "The ESP32 could not save credentials. The previous configuration was preserved.",
   busy: "The ESP32 is already provisioning. Wait and try again.",
+  wifi_scan_failed: "The ESP32 Wi-Fi radio could not complete the scan. Upload the scan-reconnect fix, restart the board, and retry. Manual SSID entry is still available.",
 };
 
 async function sendFrame(service: BluetoothRemoteGATTService, frame: object) {
@@ -116,6 +118,32 @@ export async function scanSentrixHardware(): Promise<ScanResult> {
     }
     return `Bluetooth: ${error instanceof Error ? error.message : String(error)}`;
   }
+}
+
+export async function scanSentrixWifi(hardware: SentrixHardware, pin: string): Promise<string[]> {
+  await authenticateSentrixHardware(hardware, pin);
+  const service = await hardware.device.gatt!.getPrimaryService(SENTRIX_BLE_SERVICE_UUID);
+  let networks: BluetoothRemoteGATTCharacteristic;
+  try { networks = await service.getCharacteristic(NETWORKS_UUID); }
+  catch { throw new Error("Upload the latest ESP32 firmware to scan Wi-Fi. You can still enter the SSID manually."); }
+  const status = await sendFrame(service, { op: "scan_wifi" });
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    const state = new TextDecoder().decode(await status.readValue());
+    if (state === "wifi_scan_done") {
+      const result: unknown = JSON.parse(new TextDecoder().decode(await networks.readValue()));
+      if (!Array.isArray(result) || result.length > 8 || result.some(ssid =>
+        typeof ssid !== "string" || !ssid.length || encode(ssid).length > 32 || ssid.includes("\0"))) {
+        throw new Error("The ESP32 returned invalid Wi-Fi names.");
+      }
+      return [...new Set(result as string[])];
+    }
+    if (state !== "scanning_wifi" && state !== "receiving") {
+      throw new Error(errors[state] || `Unexpected ESP32 Wi-Fi scan status: ${state.slice(0, 64)}. Restart the board and retry.`);
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  throw new Error("Wi-Fi scan timed out. Wait a moment and retry, or enter the SSID manually.");
 }
 
 export async function provisionSentrixHardware(
