@@ -184,9 +184,9 @@ export function BleOnboardingModal({
         if (e.target === e.currentTarget && !isProvisioning) onClose();
       }}
     >
-      <div className="surface-card w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--border)] shadow-2xl">
+      <div className="surface-card w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] shadow-2xl">
         {/* Modal Top Header */}
-        <div className="border-b border-[var(--border)] bg-[var(--surface-hover)] px-6 py-4">
+        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface-hover)] px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/15 text-amber-500 text-xs font-bold font-mono">
@@ -237,7 +237,7 @@ export function BleOnboardingModal({
         </div>
 
         {/* Modal Body Content by Step */}
-        <div className="p-6">
+        <div className="overflow-y-auto p-5 sm:p-6">
           {/* STEP 1: SCANNING */}
           {step === 1 && (
             <div className="space-y-6 text-center py-2">

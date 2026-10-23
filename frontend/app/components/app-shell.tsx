@@ -41,6 +41,34 @@ function ActiveNavLinks() {
   return <NavLinks activeHref={active?.href} />;
 }
 
+function MobileNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const active = NAV_LINKS.find(({ href }) => pathname.startsWith(href));
+  return (
+    <nav className="flex flex-col space-y-1">
+      {NAV_LINKS.map(({ href, label }) => {
+        const isActive = active?.href === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            aria-current={isActive ? "page" : undefined}
+            className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-sm font-medium transition ${
+              isActive
+                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <span>{label}</span>
+            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 function NotificationsBell() {
   const { alerts, devices } = useSentrix();
   const [open, setOpen] = useState(false);
@@ -114,6 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { isDark, toggleTheme } = useTheme();
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { userProfile } = useSentrix();
 
   useEffect(() => {
@@ -149,27 +178,30 @@ export function AppShell({ children }: { children: ReactNode }) {
       data-theme={isDark ? "dark" : "light"}
     >
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--header)] backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6 lg:px-8">
-          <Brand href="/dashboard" />
-          <nav
-            aria-label="Main navigation"
-            className="order-last flex w-full gap-1 md:order-none md:w-auto"
-          >
-            <Suspense fallback={<NavLinks />}>
-              <ActiveNavLinks />
-            </Suspense>
-          </nav>
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-6">
+            <Brand href="/dashboard" />
+            <nav
+              aria-label="Main navigation"
+              className="hidden items-center gap-1 lg:flex"
+            >
+              <Suspense fallback={<NavLinks />}>
+                <ActiveNavLinks />
+              </Suspense>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <NotificationsBell />
-            <div className="hidden h-8 w-px bg-[var(--border)] sm:block" />
+            <div className="hidden h-8 w-px bg-[var(--border)] lg:block" />
 
             {/* Interactive User Account Trigger (Profile Picture & Name) */}
             <button
               type="button"
               id="account-profile-trigger"
               onClick={() => setShowAccountModal(true)}
-              className="group flex items-center gap-2.5 rounded-lg p-1 transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              className="hidden lg:flex group items-center gap-2.5 rounded-lg p-1 transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               title={`${userProfile.name} · Click for Account Settings`}
               aria-label="Open Account Settings"
             >
@@ -185,7 +217,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {getInitials(userProfile.name)}
                 </div>
               )}
-              <div className="hidden flex-col items-start text-left lg:flex">
+              <div className="hidden flex-col items-start text-left xl:flex">
                 <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-amber-500 transition">
                   {userProfile.name}
                 </span>
@@ -200,7 +232,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               id="header-logout-button"
               onClick={handleLogout}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
+              className="hidden lg:inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
               title="Log Out"
               aria-label="Log Out"
             >
@@ -211,8 +243,88 @@ export function AppShell({ children }: { children: ReactNode }) {
               </svg>
               <span className="hidden sm:inline">Logout</span>
             </button>
+
+            {/* Mobile & Tablet Hamburger Navigation Button */}
+            <button
+              type="button"
+              id="app-shell-mobile-nav-toggle"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-amber-500/40 lg:hidden"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile & Tablet Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 shadow-2xl backdrop-blur-xl lg:hidden animate-in slide-in-from-top-2 duration-200">
+            <Suspense fallback={<NavLinks />}>
+              <MobileNavLinks onNavigate={() => setMobileMenuOpen(false)} />
+            </Suspense>
+
+            <div className="my-3 border-t border-[var(--border)] pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowAccountModal(true);
+                }}
+                className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-[var(--surface-hover)] transition"
+              >
+                {userProfile.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                    className="h-9 w-9 rounded-full object-cover border border-amber-500/40"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-500 text-xs font-bold text-[#382315]">
+                    {getInitials(userProfile.name)}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                    {userProfile.name}
+                  </p>
+                  <p className="font-mono text-[10px] text-amber-600 dark:text-amber-400">
+                    Account Settings ⚙
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="mt-2 flex w-full items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
       <main className="mx-auto w-full max-w-[1600px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         {children}
