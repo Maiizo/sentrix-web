@@ -157,7 +157,7 @@ test("a busy device or stale success cannot acknowledge a new configuration", as
 });
 
 test("website UUIDs match the single-file firmware contract", () => {
-  const firmware = readFileSync(new URL("../../../../SentrixArduino/SentrixESP32/SentrixESP32.ino", import.meta.url), "utf8");
+  const firmware = readFileSync(new URL("../../../../SentrixArduino/SentrixESP32/sentrix-firmware/SentrixESP32.ino", import.meta.url), "utf8");
   for (const uuid of source.matchAll(/"(12345678-1234-5678-1234-56789abcdef[0-5])"/g)) {
     assert.ok(firmware.includes(`"${uuid[1]}"`), `Missing firmware UUID ${uuid[1]}`);
   }
