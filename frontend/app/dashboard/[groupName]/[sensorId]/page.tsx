@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { useSentrix, type Device } from "../../../lib/sentrix-store";
 import { TelemetryChart } from "./telemetry-chart";
+import { useConfirm } from "../../../components/confirm-modal";
 
 function getCalibrationDay(startedAt: string): number {
   const diffMs = Math.max(0, Date.now() - new Date(startedAt).getTime());
@@ -50,11 +51,12 @@ function SensorAnalyticsContent() {
   const sensorId = decodeURIComponent(rawSensor || "");
 
   const { ready, groups, devices, alerts, deleteDevice, submitAlertFeedback, resolveAlert, getTelemetryWithBounds } = useSentrix();
+  const confirm = useConfirm();
 
   if (!ready) {
     return (
       <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-        Loading sensor analytics…
+        Loading…
       </p>
     );
   }
@@ -125,8 +127,14 @@ function SensorAnalyticsContent() {
           <button
             type="button"
             id="delete-sensor-button"
-            onClick={() => {
-              if (confirm(`Are you sure you want to delete "${device.name}"?`)) {
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Delete Sensor",
+                message: `Are you sure you want to delete "${device.name}" (${device.macAddress})? This action cannot be undone.`,
+                confirmText: "Delete Sensor",
+                type: "danger",
+              });
+              if (ok) {
                 deleteDevice(device.id);
                 router.push(`/dashboard/${group.slug}`);
               }
@@ -285,7 +293,7 @@ export default function SensorDetailPage() {
     <Suspense
       fallback={
         <p className="py-24 text-center font-mono text-xs text-[var(--text-muted)]">
-          Loading sensor analytics…
+          Loading…
         </p>
       }
     >

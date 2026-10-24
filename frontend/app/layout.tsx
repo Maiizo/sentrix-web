@@ -14,21 +14,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { ConfirmProvider } from "./components/confirm-modal";
+
 export const metadata: Metadata = {
-  title: "Sentrix | AC climate intelligence",
-  description:
-    "AC-first energy monitoring to help buildings improve cooling efficiency and reduce emissions.",
+  title: "Sentrix",
+  description: "Sentrix - Commercial AC Electrical Monitoring and Predictive Maintenance",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/images/logo-icon-dark.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--canvas)] text-[var(--text-primary)]">
         <ThemeProvider>
-          <SentrixProvider>{children}</SentrixProvider>
+          <SentrixProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </SentrixProvider>
         </ThemeProvider>
       </body>
     </html>
