@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useSentrix, type Alert } from "../lib/sentrix-store";
+import { useConfirm } from "../components/confirm-modal";
 
 type AnomalyWindow = "24h" | "7d";
 
@@ -89,7 +90,7 @@ export default function DashboardPage() {
   const { ready, groups, devices, alerts, deleteGroup } = useSentrix();
   const [anomalyWindow, setAnomalyWindow] = useState<AnomalyWindow>("24h");
   const [showCreate, setShowCreate] = useState(false);
-  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   if (!ready) {
     return (
@@ -236,10 +237,16 @@ export default function DashboardPage() {
                         type="button"
                         title={`Delete ${group.name}`}
                         aria-label={`Delete ${group.name}`}
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (confirm(`Are you sure you want to delete "${group.name}" and all its devices?`)) {
+                          const ok = await confirm({
+                            title: "Delete Group",
+                            message: `Are you sure you want to delete "${group.name}" and all its connected devices? This action cannot be undone.`,
+                            confirmText: "Delete Group",
+                            type: "danger",
+                          });
+                          if (ok) {
                             deleteGroup(group.id);
                           }
                         }}

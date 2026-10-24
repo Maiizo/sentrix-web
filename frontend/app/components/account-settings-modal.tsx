@@ -2,6 +2,7 @@
 
 import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { useSentrix } from "../lib/sentrix-store";
+import { useConfirm } from "./confirm-modal";
 
 const AVATAR_PRESETS = [
   { label: "Warm Gold", color: "from-amber-400 to-orange-500", textColor: "text-[#382315]" },
@@ -14,11 +15,14 @@ const AVATAR_PRESETS = [
 export function AccountSettingsModal({
   isOpen,
   onClose,
+  onLogout,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => void;
 }) {
-  const { userProfile, updateUserProfile, resetUserProfile, clearUserAvatar } = useSentrix();
+  const { userProfile, updateUserProfile, clearUserAvatar } = useSentrix();
+  const confirm = useConfirm();
 
   const [name, setName] = useState(userProfile.name);
   const [email, setEmail] = useState(userProfile.email);
@@ -27,7 +31,6 @@ export function AccountSettingsModal({
   const [phone, setPhone] = useState(userProfile.phone ?? "");
   const [avatarUrl, setAvatarUrl] = useState(userProfile.avatarUrl ?? "");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,7 +48,13 @@ export function AccountSettingsModal({
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Image file size should be less than 2MB.");
+      confirm({
+        title: "File Too Large",
+        message: "Image file size should be less than 2MB. Please select a smaller photo.",
+        confirmText: "Understood",
+        cancelText: null,
+        type: "warning",
+      });
       return;
     }
 
@@ -83,18 +92,6 @@ export function AccountSettingsModal({
     notifySuccess("Account profile updated successfully!");
   }
 
-  // DELETE / RESET
-  function handleResetToDefault() {
-    const defaultData = resetUserProfile();
-    setName(defaultData.name);
-    setEmail(defaultData.email);
-    setRole(defaultData.role);
-    setDepartment(defaultData.department ?? "");
-    setPhone(defaultData.phone ?? "");
-    setAvatarUrl(defaultData.avatarUrl ?? "");
-    setShowDeleteConfirm(false);
-    notifySuccess("Account profile reset to default!");
-  }
 
   // DELETE PHOTO
   function handleRemovePhoto() {
@@ -113,7 +110,7 @@ export function AccountSettingsModal({
     >
       <div className="surface-card relative w-full max-w-xl rounded-2xl border border-[var(--border)] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface-hover)] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 font-semibold">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -149,7 +146,7 @@ export function AccountSettingsModal({
           )}
 
           {/* Profile Picture Section (READ / UPDATE / DELETE photo) */}
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <h3 className="eyebrow mb-3">Profile Picture & Avatar</h3>
             <div className="flex flex-col sm:flex-row items-center gap-5">
               <div className="relative group">
@@ -195,7 +192,18 @@ export function AccountSettingsModal({
                   {avatarUrl && (
                     <button
                       type="button"
-                      onClick={handleRemovePhoto}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Remove Profile Photo",
+                          message: "Are you sure you want to remove your profile photo and revert to your initials?",
+                          confirmText: "Remove Photo",
+                          cancelText: "Cancel",
+                          type: "danger",
+                        });
+                        if (ok) {
+                          handleRemovePhoto();
+                        }
+                      }}
                       className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
                     >
                       Remove Photo
@@ -225,7 +233,7 @@ export function AccountSettingsModal({
               </div>
 
               <div>
-                <label className="eyebrow mb-1.5 block">Work Email *</label>
+                <label className="eyebrow mb-1.5 block">Email *</label>
                 <input
                   type="email"
                   required
@@ -272,55 +280,32 @@ export function AccountSettingsModal({
               />
             </div>
           </form>
-
-          {/* Danger / Reset Zone (DELETE / RESET custom account data) */}
-          <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold text-red-500">Reset Account Profile</p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                  Clear custom account modifications and revert credentials to factory defaults.
-                </p>
-              </div>
-              {!showDeleteConfirm ? (
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition shrink-0"
-                >
-                  Reset Profile
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleResetToDefault}
-                    className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 transition"
-                  >
-                    Confirm Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface)]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Modal Footer */}
         <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface)] px-6 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition"
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition"
+            >
+              Cancel
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                id="modal-logout-button"
+                onClick={() => {
+                  onClose();
+                  onLogout();
+                }}
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20 transition"
+              >
+                Log Out
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             form="account-settings-form"

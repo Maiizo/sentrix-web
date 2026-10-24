@@ -69,3 +69,20 @@ body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Dynamic theme brand logo handling */
+.logo-dark-theme {
+  display: block;
+}
+.logo-light-theme {
+  display: none;
+}
+html.light .logo-dark-theme,
+[data-theme="light"] .logo-dark-theme {
+  display: none !important;
+}
+html.light .logo-light-theme,
+[data-theme="light"] .logo-light-theme {
+  display: block !important;
+}
+

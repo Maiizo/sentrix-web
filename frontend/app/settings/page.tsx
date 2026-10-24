@@ -9,13 +9,11 @@ import {
 
 type NotificationPreferences = {
   emailAlerts: boolean;
-  smsCritical: boolean;
   browserPush: boolean;
 };
 
 const DEFAULT_NOTIFICATIONS: NotificationPreferences = {
   emailAlerts: true,
-  smsCritical: true,
   browserPush: false,
 };
 
@@ -53,7 +51,7 @@ function UserInviteModal({
       }}
     >
       <div className="surface-card w-full max-w-md overflow-hidden rounded-2xl border border-[var(--border)] shadow-2xl animate-in fade-in zoom-in-95">
-        <div className="border-b border-[var(--border)] bg-[var(--surface-hover)] px-6 py-4">
+        <div className="border-b border-[var(--border)] bg-[var(--surface)] px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               Invite Facility Supervisor
@@ -89,7 +87,7 @@ function UserInviteModal({
           </div>
 
           <div>
-            <label className="eyebrow mb-1 block">Work Email</label>
+            <label className="eyebrow mb-1 block">Email</label>
             <input
               type="email"
               required
@@ -167,7 +165,7 @@ function UserInviteModal({
 }
 
 function SettingsContent() {
-  const { ready, teamMembers, inviteTeamMember, resetDemoData, userProfile, updateUserProfile } = useSentrix();
+  const { ready, teamMembers, inviteTeamMember, userProfile, updateUserProfile } = useSentrix();
 
   // Profile Form State synced with useSentrix store
   const [fullName, setFullName] = useState(userProfile.name);
@@ -195,10 +193,6 @@ function SettingsContent() {
     return DEFAULT_NOTIFICATIONS;
   });
   const [notificationsSaved, setNotificationsSaved] = useState(false);
-
-  // Reset confirmation state
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [resetMessage, setResetMessage] = useState(false);
 
   function handleSaveProfile(e: FormEvent) {
     e.preventDefault();
@@ -232,7 +226,7 @@ function SettingsContent() {
     setTimeout(() => setNotificationsSaved(false), 2500);
   }
 
-  function handleToggleSetting(key: "emailAlerts" | "smsCritical") {
+  function handleToggleSetting(key: "emailAlerts") {
     const updated = { ...notifications, [key]: !notifications[key] };
     setNotifications(updated);
     try {
@@ -240,13 +234,6 @@ function SettingsContent() {
     } catch {}
     setNotificationsSaved(true);
     setTimeout(() => setNotificationsSaved(false), 2500);
-  }
-
-  function handleResetSeed() {
-    resetDemoData();
-    setConfirmReset(false);
-    setResetMessage(true);
-    setTimeout(() => setResetMessage(false), 3500);
   }
 
   if (!ready) {
@@ -261,21 +248,13 @@ function SettingsContent() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl space-y-8">
+      <div className="mx-auto max-w-4xl space-y-8">
         {/* Page Header */}
         <div>
           <h1 className="text-xl font-semibold tracking-[-0.045em] text-[var(--text-primary)] sm:text-2xl">
             Settings
           </h1>
         </div>
-
-        {/* Global Feedback Messages */}
-        {resetMessage && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 font-mono text-xs text-emerald-400">
-            <span>✓</span>
-            <span>Demo data reset successfully! Default groups, AC devices, and alerts restored.</span>
-          </div>
-        )}
 
         {/* PANEL 1: PROFILE SETTINGS */}
         <section className="surface-card rounded-2xl border border-[var(--border)] p-6 shadow-sm">
@@ -305,7 +284,7 @@ function SettingsContent() {
             </div>
 
             <div>
-              <label className="eyebrow mb-1.5 block">Work Email</label>
+              <label className="eyebrow mb-1.5 block">Email</label>
               <input
                 type="email"
                 required
@@ -459,33 +438,6 @@ function SettingsContent() {
               </button>
             </div>
 
-            {/* SMS Alerts Toggle */}
-            <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  SMS Alerts
-                </p>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  Instant SMS dispatch for critical alerts.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleToggleSetting("smsCritical")}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  notifications.smsCritical ? "bg-amber-500" : "bg-[var(--border)]"
-                }`}
-                role="switch"
-                aria-checked={notifications.smsCritical}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                    notifications.smsCritical ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-
             {/* Browser Push Notifications */}
             <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--canvas)] p-4">
               <div>
@@ -511,49 +463,6 @@ function SettingsContent() {
                   }`}
                 />
               </button>
-            </div>
-          </div>
-
-          {/* DANGER ZONE: RESET DEMO DATA */}
-          <div className="mt-8 border-t border-[var(--border)] pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-primary)]">
-                  Reset Demo Data
-                </p>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  Restore default sample groups, devices, and alerts.
-                </p>
-              </div>
-
-              {!confirmReset ? (
-                <button
-                  type="button"
-                  id="reset-demo-data-btn"
-                  onClick={() => setConfirmReset(true)}
-                  className="rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-500 hover:bg-red-500/20 transition"
-                >
-                  Reset Demo Data
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 animate-in fade-in">
-                  <span className="font-mono text-xs text-red-500">Confirm reset?</span>
-                  <button
-                    type="button"
-                    onClick={handleResetSeed}
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition"
-                  >
-                    Yes, Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmReset(false)}
-                    className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </section>
